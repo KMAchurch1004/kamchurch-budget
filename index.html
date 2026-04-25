@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>교회 예산 관리 시스템 v3.1</title>
+<title>교회 예산 관리 시스템 v3.4</title>
+<!-- SheetJS for Excel handling -->
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -588,6 +590,316 @@ body {
     cursor: pointer;
     position: relative;
 }
+
+/* ===== v3.4: 통합 매트릭스 ===== */
+.matrix-container {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e0e0e0;
+    padding: 20px;
+    margin-bottom: 20px;
+    overflow-x: auto;
+}
+
+.matrix-container h3 {
+    color: #2c3e50;
+    margin-bottom: 15px;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.matrix-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    min-width: 700px;
+}
+
+.matrix-table th {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 12px 8px;
+    text-align: center;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    border: 1px solid #5568d3;
+}
+
+.matrix-table th.dept-col {
+    text-align: left;
+    min-width: 130px;
+    background: linear-gradient(135deg, #5568d3 0%, #6543a0 100%);
+}
+
+.matrix-table td {
+    padding: 10px 8px;
+    border: 1px solid #e0e0e0;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.matrix-table td.dept-name {
+    text-align: left;
+    font-weight: 600;
+    color: #2c3e50;
+    background: #f8f9fa;
+    position: sticky;
+    left: 0;
+    z-index: 5;
+}
+
+.matrix-table tr.total-row td {
+    background: #f0f4ff;
+    font-weight: bold;
+    color: #2c3e50;
+    border-top: 2px solid #667eea;
+}
+
+.matrix-table tr.total-row td.dept-name {
+    background: linear-gradient(135deg, #f0f4ff 0%, #e8ecff 100%);
+}
+
+.matrix-table th.total-col,
+.matrix-table td.total-col {
+    background: #f0f4ff;
+    font-weight: bold;
+    color: #667eea;
+    border-left: 2px solid #667eea;
+}
+
+.matrix-table tr.total-row td.total-col {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.matrix-cell {
+    position: relative;
+    cursor: help;
+    transition: background 0.2s;
+}
+
+.matrix-cell:hover {
+    background: #f0f4ff !important;
+}
+
+.matrix-cell-amount {
+    font-weight: 600;
+}
+
+.matrix-cell-rate {
+    font-size: 10px;
+    color: #95a5a6;
+    margin-top: 2px;
+}
+
+.matrix-cell.empty {
+    color: #c0c0c0;
+    font-weight: normal;
+}
+
+.matrix-cell.warning {
+    background: #fff8e1;
+}
+
+.matrix-cell.danger {
+    background: #ffebee;
+}
+
+.matrix-cell.warning .matrix-cell-rate {
+    color: #f39c12;
+    font-weight: 600;
+}
+
+.matrix-cell.danger .matrix-cell-rate {
+    color: #e74c3c;
+    font-weight: 600;
+}
+
+/* ===== v3.4: 부서별 펼침 카드 ===== */
+.dept-summary-card {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    overflow: hidden;
+    transition: all 0.3s;
+}
+
+.dept-summary-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.dept-summary-header {
+    padding: 15px 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: background 0.2s;
+    user-select: none;
+}
+
+.dept-summary-header:hover {
+    background: #f8f9fa;
+}
+
+.dept-summary-card.expanded .dept-summary-header {
+    background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.dept-summary-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+}
+
+.dept-toggle-icon {
+    font-size: 16px;
+    color: #667eea;
+    transition: transform 0.3s;
+    width: 20px;
+    text-align: center;
+}
+
+.dept-summary-card.expanded .dept-toggle-icon {
+    transform: rotate(90deg);
+}
+
+.dept-summary-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.dept-summary-stats {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.dept-stat-item {
+    text-align: right;
+    font-size: 13px;
+}
+
+.dept-stat-item .label {
+    color: #95a5a6;
+    font-size: 11px;
+}
+
+.dept-stat-item .value {
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.dept-status-badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.dept-status-badge.normal {
+    background: #d4edda;
+    color: #155724;
+}
+
+.dept-status-badge.warning {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.dept-status-badge.danger {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.dept-summary-detail {
+    padding: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease, padding 0.3s ease;
+}
+
+.dept-summary-card.expanded .dept-summary-detail {
+    padding: 20px;
+    max-height: 1500px;
+}
+
+/* 미니 진행률 바 */
+.mini-progress {
+    width: 80px;
+    height: 6px;
+    background: #e0e0e0;
+    border-radius: 3px;
+    overflow: hidden;
+    display: inline-block;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+.mini-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    transition: width 0.3s;
+}
+
+.mini-progress-bar.warning {
+    background: linear-gradient(90deg, #f39c12, #e67e22);
+}
+
+.mini-progress-bar.danger {
+    background: linear-gradient(90deg, #e74c3c, #c0392b);
+}
+
+/* 뷰 모드 토글 */
+.view-mode-toggle {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 20px;
+    background: #f8f9fa;
+    padding: 5px;
+    border-radius: 10px;
+    width: fit-content;
+}
+
+.view-mode-toggle button {
+    padding: 8px 16px;
+    border: none;
+    background: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    color: #7f8c8d;
+    transition: all 0.2s;
+    font-size: 13px;
+}
+
+.view-mode-toggle button.active {
+    background: white;
+    color: #667eea;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+@media (max-width: 768px) {
+    .matrix-table {
+        font-size: 11px;
+    }
+    .matrix-table th, .matrix-table td {
+        padding: 6px 4px;
+    }
+    .dept-summary-stats {
+        gap: 8px;
+    }
+}
+
 .request-card.clickable::after {
     content: "🔍 클릭하여 상세 확인";
     position: absolute;
@@ -817,7 +1129,7 @@ body {
     <div class="login-box">
         <div class="logo">⛪</div>
         <h1 class="login-title">교회 예산 관리 시스템</h1>
-        <p class="login-subtitle">v3.1 - 통계 카드 클릭으로 빠른 조회</p>
+        <p class="login-subtitle">v3.4 - 통합 매트릭스 뷰</p>
 
         <div id="loginForm">
             <div class="form-group">
@@ -835,8 +1147,8 @@ body {
 
             <div class="test-accounts">
                 <h4>🧪 테스트 계정 (비밀번호: 123456)</h4>
-                <p><strong>member@test.com</strong> - 부서원 (예배부)</p>
-                <p><strong>leader@test.com</strong> - 부서장 (예배부)</p>
+                <p><strong>member@test.com</strong> - 부서원 (예배위원회)</p>
+                <p><strong>leader@test.com</strong> - 부서장 (예배위원회)</p>
                 <p><strong>finance@test.com</strong> - 재정 담당자</p>
                 <p><strong>chair@test.com</strong> - 재정위원장</p>
                 <p><strong>admin@test.com</strong> - 관리자</p>
@@ -883,7 +1195,7 @@ body {
 <div id="mainApp" class="main-app">
     <div class="header">
         <div class="header-left">
-            <h1>⛪ 교회 예산 관리 시스템 <span style="font-size:14px;color:#667eea">v3.1</span></h1>
+            <h1>⛪ 교회 예산 관리 시스템 <span style="font-size:14px;color:#667eea">v3.4</span></h1>
             <p id="currentUserInfo"></p>
         </div>
         <div class="header-right">
@@ -924,6 +1236,10 @@ body {
             <div class="menu-item" onclick="showBudgetPlan()" data-view="budget-plan" id="menuBudgetPlan">
                 <span class="menu-icon">📝</span>
                 <span>예산 계획 관리</span>
+            </div>
+            <div class="menu-item" onclick="showReport()" data-view="report" id="menuReport">
+                <span class="menu-icon">📑</span>
+                <span>보고서 생성</span>
             </div>
         </div>
 
@@ -1035,6 +1351,18 @@ body {
                         <h2 class="content-title">예산 현황</h2>
                         <p class="content-subtitle" id="budgetStatusSubtitle"></p>
                     </div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap" id="budgetStatusActions">
+                        <button class="btn btn-success" id="btnDownloadBudget" style="width:auto;padding:10px 16px;font-size:13px;display:none" onclick="downloadBudgetStatusExcel()">
+                            📥 엑셀 다운로드
+                        </button>
+                        <button class="btn btn-info" id="btnDownloadTemplate" style="width:auto;padding:10px 16px;font-size:13px;display:none" onclick="downloadBudgetTemplate()">
+                            📋 양식 다운로드
+                        </button>
+                        <button class="btn btn-warning" id="btnUploadBudget" style="width:auto;padding:10px 16px;font-size:13px;display:none" onclick="document.getElementById('budgetUploadInput').click()">
+                            📤 엑셀 업로드
+                        </button>
+                        <input type="file" id="budgetUploadInput" accept=".xlsx,.xls" style="display:none" onchange="handleBudgetUpload(event)">
+                    </div>
                 </div>
 
                 <div id="budgetStatusContent"></div>
@@ -1053,6 +1381,87 @@ body {
                 </div>
 
                 <div id="budgetPlanContent"></div>
+            </div>
+
+            <!-- ===== v3.2: 보고서 생성 ===== -->
+            <div id="reportView" class="hidden">
+                <div class="content-header">
+                    <div>
+                        <h2 class="content-title">📑 보고서 생성</h2>
+                        <p class="content-subtitle">기간별 예산 집행 보고서를 생성하고 다운로드합니다</p>
+                    </div>
+                </div>
+
+                <div class="info-display">
+                    📌 <strong>안내:</strong> 보고서는 선택한 기간의 승인된 신청을 기준으로 생성됩니다.
+                    엑셀 파일로 다운로드하여 회의 자료로 활용할 수 있습니다.
+                </div>
+
+                <!-- 보고서 옵션 -->
+                <div style="background:#f8f9fa;padding:25px;border-radius:12px;margin-bottom:20px">
+                    <h3 style="color:#2c3e50;margin-bottom:15px;font-size:16px">📋 보고서 옵션</h3>
+                    
+                    <div class="form-group">
+                        <label>📅 기간 선택</label>
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px">
+                            <label style="display:flex;align-items:center;gap:6px;padding:10px;background:white;border-radius:8px;cursor:pointer;border:2px solid #e0e0e0" class="report-period-option">
+                                <input type="radio" name="reportPeriod" value="q1" onchange="updateReportPreview()" checked>
+                                <span style="font-size:13px">1분기 (1-3월)</span>
+                            </label>
+                            <label style="display:flex;align-items:center;gap:6px;padding:10px;background:white;border-radius:8px;cursor:pointer;border:2px solid #e0e0e0" class="report-period-option">
+                                <input type="radio" name="reportPeriod" value="q2" onchange="updateReportPreview()">
+                                <span style="font-size:13px">2분기 (4-6월)</span>
+                            </label>
+                            <label style="display:flex;align-items:center;gap:6px;padding:10px;background:white;border-radius:8px;cursor:pointer;border:2px solid #e0e0e0" class="report-period-option">
+                                <input type="radio" name="reportPeriod" value="q3" onchange="updateReportPreview()">
+                                <span style="font-size:13px">3분기 (7-9월)</span>
+                            </label>
+                            <label style="display:flex;align-items:center;gap:6px;padding:10px;background:white;border-radius:8px;cursor:pointer;border:2px solid #e0e0e0" class="report-period-option">
+                                <input type="radio" name="reportPeriod" value="q4" onchange="updateReportPreview()">
+                                <span style="font-size:13px">4분기 (10-12월)</span>
+                            </label>
+                            <label style="display:flex;align-items:center;gap:6px;padding:10px;background:white;border-radius:8px;cursor:pointer;border:2px solid #e0e0e0" class="report-period-option">
+                                <input type="radio" name="reportPeriod" value="h1" onchange="updateReportPreview()">
+                                <span style="font-size:13px">상반기 (1-6월)</span>
+                            </label>
+                            <label style="display:flex;align-items:center;gap:6px;padding:10px;background:white;border-radius:8px;cursor:pointer;border:2px solid #e0e0e0" class="report-period-option">
+                                <input type="radio" name="reportPeriod" value="h2" onchange="updateReportPreview()">
+                                <span style="font-size:13px">하반기 (7-12월)</span>
+                            </label>
+                            <label style="display:flex;align-items:center;gap:6px;padding:10px;background:white;border-radius:8px;cursor:pointer;border:2px solid #e0e0e0" class="report-period-option">
+                                <input type="radio" name="reportPeriod" value="annual" onchange="updateReportPreview()">
+                                <span style="font-size:13px">연간 (1-12월)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>🗓️ 연도</label>
+                        <select id="reportYear" onchange="updateReportPreview()" style="max-width:200px">
+                            <!-- 동적 생성 -->
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>🏢 부서 선택</label>
+                        <select id="reportDepartment" onchange="updateReportPreview()" style="max-width:300px">
+                            <option value="all">전체 부서</option>
+                            <!-- 동적 생성 -->
+                        </select>
+                    </div>
+
+                    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:20px">
+                        <button class="btn btn-primary" style="width:auto;padding:12px 24px" onclick="generateReport()">
+                            📊 보고서 미리보기
+                        </button>
+                        <button class="btn btn-success" style="width:auto;padding:12px 24px" onclick="downloadReportExcel()">
+                            📥 엑셀 다운로드
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 보고서 미리보기 -->
+                <div id="reportPreview"></div>
             </div>
 
         </div>
@@ -1170,32 +1579,34 @@ let viewingRequestId = null;  // v3: 상세 보기 중인 신청
 let editingRequestId = null;  // v3: 수정 중인 신청
 
 const STORAGE_KEYS = {
-    USERS: 'cb_v3_users',
-    REQUESTS: 'cb_v3_requests',
-    CURRENT_USER: 'cb_v3_current_user',
-    BUDGET_PLANS: 'cb_v3_budget_plans',
-    DEPARTMENTS: 'cb_v3_departments',
-    CATEGORIES: 'cb_v3_categories'
+    USERS: 'cb_v32_users',
+    REQUESTS: 'cb_v32_requests',
+    CURRENT_USER: 'cb_v32_current_user',
+    BUDGET_PLANS: 'cb_v32_budget_plans',
+    DEPARTMENTS: 'cb_v32_departments',
+    CATEGORIES: 'cb_v32_categories'
 };
 
 // ============================================
 // 마스터 데이터
 // ============================================
 const DEPARTMENTS = [
-    { id: 'worship', name: '예배부' },
-    { id: 'education', name: '교육부' },
-    { id: 'mission', name: '선교부' },
-    { id: 'youth', name: '청년부' },
-    { id: 'praise', name: '찬양부' },
-    { id: 'service', name: '봉사부' }
+    { id: 'worship', name: '예배위원회' },
+    { id: 'education', name: '교육위원회' },
+    { id: 'mission', name: '선교위원회' },
+    { id: 'youth', name: '청년위원회' },
+    { id: 'praise', name: '찬양위원회' },
+    { id: 'service', name: '봉사위원회' }
 ];
 
 const CATEGORIES = [
     { id: 'event', name: '행사비' },
     { id: 'ministry', name: '사역비' },
+    { id: 'worship_supplies', name: '예배비' },
+    { id: 'education', name: '교육비' },
+    { id: 'fellowship', name: '친교비' },
     { id: 'supplies', name: '소모품비' },
     { id: 'gift', name: '구제비' },
-    { id: 'education', name: '교육비' },
     { id: 'other', name: '기타' }
 ];
 
@@ -1206,6 +1617,40 @@ const ROLE_NAMES = {
     financeChair: '재정위원장',
     admin: '관리자'
 };
+
+// ============================================
+// v3.3: 권한 체크 함수
+// ============================================
+
+// 보고서 메뉴 접근 가능 여부
+function canAccessReport() {
+    return ['leader', 'finance', 'financeChair', 'admin'].includes(currentUser.role);
+}
+
+// 전체 부서 보고서 가능 여부 (부서장은 본인 부서만)
+function canViewAllDepartmentsReport() {
+    return ['finance', 'financeChair', 'admin'].includes(currentUser.role);
+}
+
+// 예산 현황 엑셀 다운로드 가능 여부 (부서장 이상)
+function canDownloadBudgetExcel() {
+    return ['leader', 'finance', 'financeChair', 'admin'].includes(currentUser.role);
+}
+
+// 양식 다운로드 가능 여부 (관리자/재정위원장만)
+function canDownloadTemplate() {
+    return ['financeChair', 'admin'].includes(currentUser.role);
+}
+
+// 엑셀 업로드 가능 여부 (관리자/재정위원장만)
+function canUploadBudget() {
+    return ['financeChair', 'admin'].includes(currentUser.role);
+}
+
+// 부서장이 본인 부서만 볼 수 있는지
+function isLeaderOnlyOwnDepartment() {
+    return currentUser.role === 'leader';
+}
 
 // ============================================
 // 초기화
@@ -1256,17 +1701,62 @@ function initSampleData() {
           department: 'service', role: 'admin' }
     ];
 
-    // 2025년 예산 계획
+    // 2026년 예산 계획 (실제 데이터 기반)
     const currentYear = new Date().getFullYear();
     const samplePlans = [];
     
+    // 예배위원회 - 실제 데이터 기반 (총 24,030,000원)
     const planTemplate = {
-        worship:   { event: 20000000, ministry: 15000000, supplies: 8000000, gift: 3000000, education: 2000000, other: 2000000 },
-        education: { event: 10000000, ministry: 12000000, supplies: 5000000, gift: 2000000, education: 8000000, other: 1000000 },
-        mission:   { event: 15000000, ministry: 20000000, supplies: 3000000, gift: 5000000, education: 3000000, other: 2000000 },
-        youth:     { event: 12000000, ministry: 8000000, supplies: 3000000, gift: 1000000, education: 3000000, other: 1000000 },
-        praise:    { event: 8000000, ministry: 5000000, supplies: 6000000, gift: 500000, education: 1500000, other: 1000000 },
-        service:   { event: 5000000, ministry: 10000000, supplies: 3000000, gift: 15000000, education: 1000000, other: 2000000 }
+        worship: {
+            education: 11500000,        // 교육비 (일반강사 800만, 부흥회 350만)
+            worship_supplies: 8330000,  // 예배비 (강단미화 648만, 미디어 120만, 등)
+            event: 2900000,             // 행사비 (성찬식, 세례식, 어버이주일 등)
+            fellowship: 1300000,        // 친교비 (환영환송, 새신자행사)
+            ministry: 0, supplies: 0, gift: 0, other: 0
+        },
+        education: {
+            education: 15000000,
+            event: 8000000,
+            ministry: 5000000,
+            supplies: 3000000,
+            other: 2000000,
+            worship_supplies: 0, gift: 0, fellowship: 1000000
+        },
+        mission: {
+            ministry: 18000000,
+            event: 10000000,
+            gift: 5000000,
+            education: 3000000,
+            other: 2000000,
+            worship_supplies: 0, supplies: 0, fellowship: 0
+        },
+        youth: {
+            event: 12000000,
+            ministry: 6000000,
+            fellowship: 3000000,
+            education: 4000000,
+            supplies: 2000000,
+            other: 1000000,
+            worship_supplies: 0, gift: 0
+        },
+        praise: {
+            worship_supplies: 8000000,
+            event: 5000000,
+            education: 3000000,
+            supplies: 4000000,
+            ministry: 2000000,
+            other: 1000000,
+            gift: 0, fellowship: 0
+        },
+        service: {
+            gift: 15000000,
+            ministry: 8000000,
+            fellowship: 5000000,
+            event: 3000000,
+            supplies: 2000000,
+            other: 2000000,
+            worship_supplies: 0, education: 1000000
+        }
     };
 
     Object.keys(planTemplate).forEach(deptId => {
@@ -1281,15 +1771,15 @@ function initSampleData() {
         });
     });
 
-    // 샘플 신청 내역
+    // 샘플 신청 내역 - 실제 예배위원회 항목 기반
     const now = new Date();
     const sampleRequests = [
         {
             id: 'r1',
             department: 'worship', category: 'event',
-            amount: 3000000,
-            purpose: '성탄절 특별 예배 준비 (현수막, 순서지, 장식)',
-            usageDate: '2025-12-25',
+            amount: 1200000,
+            purpose: '성찬식 준비 (성찬키트, 포도주, 빵, 장갑)',
+            usageDate: '2026-04-19',
             requestedBy: 'u1', requestedByName: '홍길동',
             requestDate: new Date(now.getTime() - 86400000).toISOString(),
             status: 'pending-leader',
@@ -1305,10 +1795,10 @@ function initSampleData() {
         },
         {
             id: 'r2',
-            department: 'worship', category: 'supplies',
-            amount: 500000,
-            purpose: '예배 순서지 3개월분 인쇄',
-            usageDate: '2025-04-01',
+            department: 'worship', category: 'worship_supplies',
+            amount: 540000,
+            purpose: '강단미화지원 (4월 1주~4주, 120,000원/주)',
+            usageDate: '2026-04-30',
             requestedBy: 'u1', requestedByName: '홍길동',
             requestDate: new Date(now.getTime() - 172800000).toISOString(),
             status: 'pending-finance',
@@ -1337,10 +1827,10 @@ function initSampleData() {
         },
         {
             id: 'r3',
-            department: 'worship', category: 'ministry',
-            amount: 800000,
-            purpose: '구역 심방 교통비 및 간식비 (1분기)',
-            usageDate: '2025-03-31',
+            department: 'worship', category: 'fellowship',
+            amount: 200000,
+            purpose: '새신자환영행사 (1분기)',
+            usageDate: '2026-03-31',
             requestedBy: 'u1', requestedByName: '홍길동',
             requestDate: new Date(now.getTime() - 604800000).toISOString(),
             status: 'approved',
@@ -1373,6 +1863,90 @@ function initSampleData() {
                     by: '이재정',
                     byId: 'u3',
                     date: new Date(now.getTime() - 432000000).toISOString(),
+                    details: '재정 최종 승인'
+                }
+            ]
+        },
+        {
+            id: 'r4',
+            department: 'worship', category: 'event',
+            amount: 500000,
+            purpose: '세례식 선물 준비',
+            usageDate: '2026-05-12',
+            requestedBy: 'u1', requestedByName: '홍길동',
+            requestDate: new Date(now.getTime() - 432000000).toISOString(),
+            status: 'approved',
+            leaderApproval: {
+                approvedBy: '김부장',
+                approvedDate: new Date(now.getTime() - 345600000).toISOString()
+            },
+            financeApproval: {
+                approvedBy: '이재정',
+                approvedDate: new Date(now.getTime() - 259200000).toISOString()
+            },
+            rejectReason: null, cancelReason: null,
+            history: [
+                {
+                    action: 'created',
+                    by: '홍길동',
+                    byId: 'u1',
+                    date: new Date(now.getTime() - 432000000).toISOString(),
+                    details: '신청 생성'
+                },
+                {
+                    action: 'approved',
+                    by: '김부장',
+                    byId: 'u2',
+                    date: new Date(now.getTime() - 345600000).toISOString(),
+                    details: '부서장 승인'
+                },
+                {
+                    action: 'approved',
+                    by: '이재정',
+                    byId: 'u3',
+                    date: new Date(now.getTime() - 259200000).toISOString(),
+                    details: '재정 최종 승인'
+                }
+            ]
+        },
+        {
+            id: 'r5',
+            department: 'worship', category: 'education',
+            amount: 2000000,
+            purpose: '4월 일반강사 사례비',
+            usageDate: '2026-04-30',
+            requestedBy: 'u1', requestedByName: '홍길동',
+            requestDate: new Date(now.getTime() - 259200000).toISOString(),
+            status: 'approved',
+            leaderApproval: {
+                approvedBy: '김부장',
+                approvedDate: new Date(now.getTime() - 172800000).toISOString()
+            },
+            financeApproval: {
+                approvedBy: '이재정',
+                approvedDate: new Date(now.getTime() - 86400000).toISOString()
+            },
+            rejectReason: null, cancelReason: null,
+            history: [
+                {
+                    action: 'created',
+                    by: '홍길동',
+                    byId: 'u1',
+                    date: new Date(now.getTime() - 259200000).toISOString(),
+                    details: '신청 생성'
+                },
+                {
+                    action: 'approved',
+                    by: '김부장',
+                    byId: 'u2',
+                    date: new Date(now.getTime() - 172800000).toISOString(),
+                    details: '부서장 승인'
+                },
+                {
+                    action: 'approved',
+                    by: '이재정',
+                    byId: 'u3',
+                    date: new Date(now.getTime() - 86400000).toISOString(),
                     details: '재정 최종 승인'
                 }
             ]
@@ -1591,6 +2165,7 @@ function showMainApp() {
     const approvalMenu = document.getElementById('menuApproval');
     const newRequestMenu = document.getElementById('menuNewRequest');
     const budgetPlanMenu = document.getElementById('menuBudgetPlan');
+    const reportMenu = document.getElementById('menuReport');
 
     // 승인 메뉴: 부서장, 재정담당자, 재정위원장
     if (['leader', 'finance', 'financeChair'].includes(currentUser.role)) {
@@ -1604,6 +2179,13 @@ function showMainApp() {
         budgetPlanMenu.style.display = 'flex';
     } else {
         budgetPlanMenu.style.display = 'none';
+    }
+
+    // v3.3: 보고서 메뉴: 부서장, 재정담당자, 재정위원장, 관리자 (부서원 제외)
+    if (canAccessReport()) {
+        reportMenu.style.display = 'flex';
+    } else {
+        reportMenu.style.display = 'none';
     }
 
     // 새 예산 신청: 모두 가능 (관리자 제외 옵션)
@@ -1656,7 +2238,7 @@ function renderSidebarBudget() {
 // 뷰 전환
 // ============================================
 function switchView(viewId) {
-    ['dashboardView','newRequestView','requestsView','approvalView','budgetStatusView','budgetPlanView']
+    ['dashboardView','newRequestView','requestsView','approvalView','budgetStatusView','budgetPlanView','reportView']
         .forEach(id => document.getElementById(id).classList.add('hidden'));
     document.getElementById(viewId).classList.remove('hidden');
     document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
@@ -1698,6 +2280,16 @@ function showApproval() {
 function showBudgetStatus() {
     switchView('budgetStatusView');
     document.querySelector('[data-view="budget-status"]').classList.add('active');
+    
+    // v3.3: 권한에 따라 버튼 표시/숨김
+    const btnDownload = document.getElementById('btnDownloadBudget');
+    const btnTemplate = document.getElementById('btnDownloadTemplate');
+    const btnUpload = document.getElementById('btnUploadBudget');
+    
+    if (btnDownload) btnDownload.style.display = canDownloadBudgetExcel() ? 'inline-block' : 'none';
+    if (btnTemplate) btnTemplate.style.display = canDownloadTemplate() ? 'inline-block' : 'none';
+    if (btnUpload) btnUpload.style.display = canUploadBudget() ? 'inline-block' : 'none';
+    
     renderBudgetStatus();
 }
 
@@ -2581,20 +3173,317 @@ function renderBudgetStatus() {
     const subtitle = document.getElementById('budgetStatusSubtitle');
     const content = document.getElementById('budgetStatusContent');
 
-    // 부서원/부서장은 자기 부서만
+    // 부서원/부서장은 자기 부서만 (기존 방식 유지)
     if (currentUser.role === 'member' || currentUser.role === 'leader') {
         subtitle.textContent = `${getDepartmentName(currentUser.department)} 예산 상세 현황`;
         content.innerHTML = renderDetailedDepartmentStatus(currentUser.department);
     } else {
-        subtitle.textContent = '전 부서 예산 상세 현황';
-        let html = '';
-        DEPARTMENTS.forEach(d => {
-            const summary = getDepartmentBudgetSummary(d.id);
-            if (summary.totalBudget === 0) return;
-            html += renderDetailedDepartmentStatus(d.id);
-        });
-        content.innerHTML = html;
+        // v3.4: 재정/재정위원장/관리자 - 통합 매트릭스 뷰
+        subtitle.textContent = '전 부서 통합 예산 현황';
+        content.innerHTML = renderIntegratedBudgetView();
     }
+}
+
+// ============================================
+// v3.4: 통합 매트릭스 뷰 (재정/재정위원장/관리자용)
+// ============================================
+function renderIntegratedBudgetView() {
+    const currentYear = new Date().getFullYear();
+    
+    // 1. 전체 통계 계산
+    const allDepts = DEPARTMENTS.map(d => ({
+        ...d,
+        ...getDepartmentBudgetSummary(d.id)
+    })).filter(d => d.totalBudget > 0);
+    
+    const totalBudget = allDepts.reduce((s, d) => s + d.totalBudget, 0);
+    const totalApproved = allDepts.reduce((s, d) => s + d.approved, 0);
+    const totalPending = allDepts.reduce((s, d) => s + d.pending, 0);
+    const overallRate = totalBudget > 0 ? ((totalApproved/totalBudget)*100).toFixed(1) : '0';
+    
+    // 위험/주의 부서 카운트
+    const dangerDepts = allDepts.filter(d => parseFloat(d.usageRate) >= 80).length;
+    
+    let html = `
+        <!-- 전체 요약 카드 -->
+        <div class="stats-grid">
+            <div class="stat-card info">
+                <div class="stat-number" style="font-size:22px">${formatMoney(totalBudget)}</div>
+                <div class="stat-label">교회 전체 연간 예산</div>
+                <div class="stat-sub">${currentYear}년 기준</div>
+            </div>
+            <div class="stat-card success">
+                <div class="stat-number" style="font-size:22px">${formatMoney(totalApproved)}</div>
+                <div class="stat-label">승인 완료</div>
+                <div class="stat-sub">${overallRate}% 집행</div>
+            </div>
+            <div class="stat-card warning">
+                <div class="stat-number" style="font-size:22px">${formatMoney(totalPending)}</div>
+                <div class="stat-label">검토 중 금액</div>
+            </div>
+            <div class="stat-card ${dangerDepts > 0 ? 'danger' : ''}">
+                <div class="stat-number">${dangerDepts}개</div>
+                <div class="stat-label">⚠️ 주의 부서 (80%↑)</div>
+                <div class="stat-sub">${formatMoney(totalBudget - totalApproved - totalPending)} 잔여</div>
+            </div>
+        </div>
+    `;
+    
+    // 2. 통합 매트릭스 (부서×항목)
+    html += renderBudgetMatrix(allDepts);
+    
+    // 3. 부서별 펼침 카드
+    html += `
+        <div class="matrix-container" style="margin-top:25px">
+            <h3>📋 부서별 상세 (클릭하여 펼치기)</h3>
+            <div id="deptCardsList">
+    `;
+    
+    allDepts.forEach(d => {
+        html += renderCollapsibleDeptCard(d);
+    });
+    
+    html += `
+            </div>
+        </div>
+    `;
+    
+    return html;
+}
+
+function renderBudgetMatrix(allDepts) {
+    // 사용 중인 카테고리만 추출
+    const usedCategories = CATEGORIES.filter(cat => {
+        return allDepts.some(d => {
+            const status = getBudgetStatus(d.id, cat.id);
+            return status.totalBudget > 0;
+        });
+    });
+    
+    let html = `
+        <div class="matrix-container">
+            <h3>🎯 부서×항목 통합 매트릭스 (연간 계획 / 집행률)</h3>
+            <div style="overflow-x:auto">
+                <table class="matrix-table">
+                    <thead>
+                        <tr>
+                            <th class="dept-col">부서</th>
+    `;
+    
+    usedCategories.forEach(cat => {
+        html += `<th>${cat.name}</th>`;
+    });
+    
+    html += `<th class="total-col">합계</th></tr></thead><tbody>`;
+    
+    // 부서별 행
+    allDepts.forEach(d => {
+        html += `<tr>`;
+        html += `<td class="dept-name">${d.name}</td>`;
+        
+        let deptTotalPlan = 0;
+        let deptTotalApproved = 0;
+        
+        usedCategories.forEach(cat => {
+            const status = getBudgetStatus(d.id, cat.id);
+            deptTotalPlan += status.totalBudget;
+            deptTotalApproved += status.approved;
+            
+            if (status.totalBudget === 0) {
+                html += `<td class="matrix-cell empty">-</td>`;
+            } else {
+                const rate = parseFloat(status.usageRate);
+                let cellClass = 'matrix-cell';
+                if (rate >= 80) cellClass += ' danger';
+                else if (rate >= 60) cellClass += ' warning';
+                
+                const tooltip = `${cat.name}\n계획: ${formatMoney(status.totalBudget)}\n승인: ${formatMoney(status.approved)}\n잔액: ${formatMoney(status.available)}`;
+                
+                html += `
+                    <td class="${cellClass}" title="${tooltip}">
+                        <div class="matrix-cell-amount">${formatMoneyShort(status.totalBudget)}</div>
+                        <div class="matrix-cell-rate">${status.usageRate}%</div>
+                    </td>
+                `;
+            }
+        });
+        
+        // 부서 합계
+        const deptRate = deptTotalPlan > 0 ? ((deptTotalApproved/deptTotalPlan)*100).toFixed(1) : '0';
+        html += `
+            <td class="total-col">
+                <div class="matrix-cell-amount">${formatMoneyShort(deptTotalPlan)}</div>
+                <div class="matrix-cell-rate">${deptRate}%</div>
+            </td>
+        `;
+        html += `</tr>`;
+    });
+    
+    // 합계 행
+    html += `<tr class="total-row"><td class="dept-name">합계</td>`;
+    let grandTotalPlan = 0;
+    let grandTotalApproved = 0;
+    
+    usedCategories.forEach(cat => {
+        let catTotalPlan = 0;
+        let catTotalApproved = 0;
+        allDepts.forEach(d => {
+            const status = getBudgetStatus(d.id, cat.id);
+            catTotalPlan += status.totalBudget;
+            catTotalApproved += status.approved;
+        });
+        grandTotalPlan += catTotalPlan;
+        grandTotalApproved += catTotalApproved;
+        
+        const catRate = catTotalPlan > 0 ? ((catTotalApproved/catTotalPlan)*100).toFixed(1) : '0';
+        html += `
+            <td>
+                <div class="matrix-cell-amount">${formatMoneyShort(catTotalPlan)}</div>
+                <div class="matrix-cell-rate">${catRate}%</div>
+            </td>
+        `;
+    });
+    
+    const grandRate = grandTotalPlan > 0 ? ((grandTotalApproved/grandTotalPlan)*100).toFixed(1) : '0';
+    html += `
+        <td class="total-col">
+            <div class="matrix-cell-amount">${formatMoneyShort(grandTotalPlan)}</div>
+            <div class="matrix-cell-rate">${grandRate}%</div>
+        </td>
+    `;
+    html += `</tr></tbody></table>`;
+    
+    // 범례
+    html += `
+            <div style="margin-top:12px;font-size:11px;color:#7f8c8d;display:flex;gap:15px;flex-wrap:wrap">
+                <span>💡 셀에 마우스를 올리면 상세 정보 표시</span>
+                <span style="display:inline-flex;align-items:center;gap:4px"><span style="display:inline-block;width:12px;height:12px;background:#fff8e1;border:1px solid #f39c12"></span>주의 (60-80%)</span>
+                <span style="display:inline-flex;align-items:center;gap:4px"><span style="display:inline-block;width:12px;height:12px;background:#ffebee;border:1px solid #e74c3c"></span>위험 (80%↑)</span>
+            </div>
+        </div>
+    `;
+    
+    return html;
+}
+
+function renderCollapsibleDeptCard(dept) {
+    const rate = parseFloat(dept.usageRate);
+    let statusClass = 'normal';
+    let statusText = '✓ 정상';
+    let progressClass = '';
+    
+    if (rate >= 80) {
+        statusClass = 'danger';
+        statusText = '⚠️ 위험';
+        progressClass = 'danger';
+    } else if (rate >= 60) {
+        statusClass = 'warning';
+        statusText = '⚠️ 주의';
+        progressClass = 'warning';
+    }
+    
+    return `
+        <div class="dept-summary-card" id="deptCard-${dept.id}">
+            <div class="dept-summary-header" onclick="toggleDeptCard('${dept.id}')">
+                <div class="dept-summary-info">
+                    <span class="dept-toggle-icon">▶</span>
+                    <span class="dept-summary-name">${dept.name}</span>
+                    <span class="dept-status-badge ${statusClass}">${statusText}</span>
+                </div>
+                <div class="dept-summary-stats">
+                    <div class="dept-stat-item">
+                        <div class="label">연간 계획</div>
+                        <div class="value">${formatMoney(dept.totalBudget)}</div>
+                    </div>
+                    <div class="dept-stat-item">
+                        <div class="label">집행</div>
+                        <div class="value" style="color:#27ae60">${formatMoney(dept.approved)}</div>
+                    </div>
+                    <div class="dept-stat-item">
+                        <div class="label">잔액</div>
+                        <div class="value" style="color:#667eea">${formatMoney(dept.available)}</div>
+                    </div>
+                    <div class="dept-stat-item" style="min-width:120px">
+                        <div class="label">집행률</div>
+                        <div class="value">
+                            <div class="mini-progress">
+                                <div class="mini-progress-bar ${progressClass}" style="width:${Math.min(rate,100)}%"></div>
+                            </div>
+                            <strong>${dept.usageRate}%</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="dept-summary-detail">
+                ${renderDeptDetailTable(dept.id)}
+            </div>
+        </div>
+    `;
+}
+
+function renderDeptDetailTable(departmentId) {
+    let html = `
+        <table class="budget-plan-table">
+            <thead>
+                <tr>
+                    <th>항목</th>
+                    <th class="amount">연간 계획</th>
+                    <th class="amount">승인됨</th>
+                    <th class="amount">검토 중</th>
+                    <th class="amount">잔액</th>
+                    <th class="amount">집행률</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+    
+    let hasData = false;
+    CATEGORIES.forEach(cat => {
+        const status = getBudgetStatus(departmentId, cat.id);
+        if (status.totalBudget === 0) return;
+        hasData = true;
+        
+        const rate = parseFloat(status.usageRate);
+        let rateColor = '#27ae60';
+        if (rate >= 90) rateColor = '#e74c3c';
+        else if (rate >= 70) rateColor = '#f39c12';
+        
+        html += `
+            <tr>
+                <td><strong>${cat.name}</strong></td>
+                <td class="amount">${formatMoney(status.totalBudget)}</td>
+                <td class="amount" style="color:#27ae60">${formatMoney(status.approved)}</td>
+                <td class="amount" style="color:#f39c12">${formatMoney(status.pending)}</td>
+                <td class="amount" style="color:#667eea"><strong>${formatMoney(status.available)}</strong></td>
+                <td class="amount" style="color:${rateColor}"><strong>${status.usageRate}%</strong></td>
+            </tr>
+        `;
+    });
+    
+    if (!hasData) {
+        html += `<tr><td colspan="6" style="text-align:center;color:#95a5a6;padding:20px">예산 항목이 설정되지 않았습니다</td></tr>`;
+    }
+    
+    html += `</tbody></table>`;
+    return html;
+}
+
+function toggleDeptCard(deptId) {
+    const card = document.getElementById(`deptCard-${deptId}`);
+    if (card) {
+        card.classList.toggle('expanded');
+    }
+}
+
+// 짧은 금액 표시 (매트릭스용)
+function formatMoneyShort(amount) {
+    if (amount === 0) return '0';
+    if (amount >= 100000000) {
+        return (amount / 100000000).toFixed(1).replace(/\.0$/, '') + '억';
+    } else if (amount >= 10000) {
+        return Math.round(amount / 10000) + '만';
+    }
+    return amount.toLocaleString();
 }
 
 function renderDetailedDepartmentStatus(departmentId) {
@@ -3264,6 +4153,805 @@ function saveEditRequest() {
     renderRequests();
     renderApproval();
     renderDashboard();
+}
+
+// ============================================
+// v3.2: 엑셀 다운로드 - 예산 현황
+// ============================================
+function downloadBudgetStatusExcel() {
+    // v3.3: 권한 체크
+    if (!canDownloadBudgetExcel()) {
+        showNotification('예산 현황 다운로드 권한이 없습니다.', 'error');
+        return;
+    }
+    
+    if (typeof XLSX === 'undefined') {
+        showNotification('엑셀 라이브러리 로딩 중... 잠시 후 다시 시도하세요.', 'warning');
+        return;
+    }
+    
+    const currentYear = new Date().getFullYear();
+    const wb = XLSX.utils.book_new();
+    
+    // v3.3: 부서장은 본인 부서만, 그 외는 전체
+    const isLeader = isLeaderOnlyOwnDepartment();
+    const targetDepts = isLeader ? 
+        DEPARTMENTS.filter(d => d.id === currentUser.department) : 
+        DEPARTMENTS;
+    
+    const titlePrefix = isLeader ? 
+        `${getDepartmentName(currentUser.department)} 예산 현황` : 
+        '교회 예산 현황 보고서';
+    
+    // === 시트 1: 부서별 예산 현황 (요약) ===
+    const summaryData = [[titlePrefix], [`${currentYear}년 기준`], [`생성일: ${new Date().toLocaleDateString('ko-KR')}`], [`다운로드: ${currentUser.name} (${ROLE_NAMES[currentUser.role]})`], []];
+    summaryData.push(['부서', '연간 계획(원)', '승인 완료(원)', '검토 중(원)', '잔액(원)', '집행률(%)']);
+    
+    let totalBudget = 0, totalApproved = 0, totalPending = 0;
+    
+    targetDepts.forEach(d => {
+        const summary = getDepartmentBudgetSummary(d.id);
+        if (summary.totalBudget === 0) return;
+        summaryData.push([
+            d.name,
+            summary.totalBudget,
+            summary.approved,
+            summary.pending,
+            summary.available,
+            parseFloat(summary.usageRate)
+        ]);
+        totalBudget += summary.totalBudget;
+        totalApproved += summary.approved;
+        totalPending += summary.pending;
+    });
+    
+    summaryData.push([
+        '합계',
+        totalBudget,
+        totalApproved,
+        totalPending,
+        totalBudget - totalApproved - totalPending,
+        totalBudget > 0 ? parseFloat(((totalApproved/totalBudget)*100).toFixed(1)) : 0
+    ]);
+    
+    const ws1 = XLSX.utils.aoa_to_sheet(summaryData);
+    ws1['!cols'] = [{wch:18},{wch:16},{wch:16},{wch:16},{wch:16},{wch:12}];
+    XLSX.utils.book_append_sheet(wb, ws1, '부서별 요약');
+    
+    // === 시트 2: 부서×항목 상세 ===
+    const detailData = [['부서별·항목별 상세 예산'], [`${currentYear}년 기준`], []];
+    detailData.push(['부서', '항목', '연간 계획(원)', '승인 완료(원)', '검토 중(원)', '잔액(원)', '집행률(%)']);
+    
+    targetDepts.forEach(d => {
+        CATEGORIES.forEach(cat => {
+            const status = getBudgetStatus(d.id, cat.id);
+            if (status.totalBudget === 0) return;
+            detailData.push([
+                d.name,
+                cat.name,
+                status.totalBudget,
+                status.approved,
+                status.pending,
+                status.available,
+                parseFloat(status.usageRate)
+            ]);
+        });
+    });
+    
+    const ws2 = XLSX.utils.aoa_to_sheet(detailData);
+    ws2['!cols'] = [{wch:18},{wch:14},{wch:16},{wch:16},{wch:16},{wch:16},{wch:12}];
+    XLSX.utils.book_append_sheet(wb, ws2, '항목별 상세');
+    
+    // === 시트 3: 신청 내역 (부서장은 본인 부서만) ===
+    let requests = JSON.parse(localStorage.getItem(STORAGE_KEYS.REQUESTS) || '[]');
+    if (isLeader) {
+        requests = requests.filter(r => r.department === currentUser.department);
+    }
+    
+    const reqData = [['예산 신청 내역'], [`${currentYear}년 기준`], []];
+    reqData.push(['신청일', '부서', '항목', '신청자', '금액(원)', '사용 목적', '사용 예정일', '상태', '비고']);
+    
+    requests.forEach(r => {
+        let note = '';
+        if (r.rejectReason) note = '반려: ' + r.rejectReason;
+        else if (r.cancelReason) note = '취소: ' + r.cancelReason;
+        
+        reqData.push([
+            new Date(r.requestDate).toLocaleDateString('ko-KR'),
+            getDepartmentName(r.department),
+            getCategoryName(r.category),
+            r.requestedByName,
+            r.amount,
+            r.purpose,
+            r.usageDate,
+            getStatusText(r.status),
+            note
+        ]);
+    });
+    
+    const ws3 = XLSX.utils.aoa_to_sheet(reqData);
+    ws3['!cols'] = [{wch:12},{wch:14},{wch:12},{wch:10},{wch:14},{wch:30},{wch:12},{wch:14},{wch:25}];
+    XLSX.utils.book_append_sheet(wb, ws3, '신청 내역');
+    
+    const filenamePrefix = isLeader ? 
+        `${getDepartmentName(currentUser.department)}_예산현황` : 
+        '예산현황';
+    const filename = `${filenamePrefix}_${currentYear}년_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(wb, filename);
+    showNotification('엑셀 파일이 다운로드되었습니다.', 'success');
+}
+
+// ============================================
+// v3.2: 예산 계획 양식 다운로드
+// ============================================
+function downloadBudgetTemplate() {
+    // v3.3: 권한 체크
+    if (!canDownloadTemplate()) {
+        showNotification('양식 다운로드 권한이 없습니다.', 'error');
+        return;
+    }
+    
+    if (typeof XLSX === 'undefined') {
+        showNotification('엑셀 라이브러리 로딩 중...', 'warning');
+        return;
+    }
+    
+    const wb = XLSX.utils.book_new();
+    const data = [
+        ['예산 계획 일괄 등록 양식'],
+        ['※ 부서명과 항목명은 정확히 입력해주세요. 금액은 숫자만 입력 (예: 5000000)'],
+        [`작성 연도: ${new Date().getFullYear()}년`],
+        [],
+        ['부서명', '항목명', '예산 금액(원)', '비고'],
+    ];
+    
+    // 부서/항목 조합 예시 추가
+    DEPARTMENTS.forEach(d => {
+        CATEGORIES.forEach(cat => {
+            data.push([d.name, cat.name, 0, '']);
+        });
+    });
+    
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    ws['!cols'] = [{wch:18},{wch:14},{wch:16},{wch:30}];
+    XLSX.utils.book_append_sheet(wb, ws, '예산 계획');
+    
+    // 부서/항목 참조 시트
+    const refData = [
+        ['부서 목록'], 
+        ...DEPARTMENTS.map(d => [d.name]),
+        [], 
+        ['항목 목록'],
+        ...CATEGORIES.map(c => [c.name])
+    ];
+    const wsRef = XLSX.utils.aoa_to_sheet(refData);
+    XLSX.utils.book_append_sheet(wb, wsRef, '참조');
+    
+    XLSX.writeFile(wb, '예산계획_양식.xlsx');
+    showNotification('양식이 다운로드되었습니다. 작성 후 업로드하세요.', 'success');
+}
+
+// ============================================
+// v3.2: 엑셀 업로드 - 예산 계획
+// ============================================
+function handleBudgetUpload(event) {
+    // v3.3: 권한 체크 (canUploadBudget 사용)
+    if (!canUploadBudget()) {
+        showNotification('예산 계획은 관리자/재정위원장만 업로드 가능합니다.', 'error');
+        event.target.value = '';
+        return;
+    }
+    
+    if (typeof XLSX === 'undefined') {
+        showNotification('엑셀 라이브러리 로딩 중...', 'warning');
+        return;
+    }
+    
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            
+            // 첫 번째 시트 읽기
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+            const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+            
+            // 헤더 행 찾기
+            let headerRow = -1;
+            for (let i = 0; i < jsonData.length; i++) {
+                const row = jsonData[i];
+                if (row && row.includes('부서명') && row.includes('항목명')) {
+                    headerRow = i;
+                    break;
+                }
+            }
+            
+            if (headerRow === -1) {
+                showNotification('양식이 올바르지 않습니다. 양식을 다운로드하여 사용하세요.', 'error');
+                event.target.value = '';
+                return;
+            }
+            
+            const headers = jsonData[headerRow];
+            const deptIdx = headers.indexOf('부서명');
+            const catIdx = headers.indexOf('항목명');
+            const amountIdx = headers.indexOf('예산 금액(원)');
+            
+            // 데이터 파싱
+            const newPlans = [];
+            const errors = [];
+            const currentYear = new Date().getFullYear();
+            
+            for (let i = headerRow + 1; i < jsonData.length; i++) {
+                const row = jsonData[i];
+                if (!row || !row[deptIdx] || !row[catIdx]) continue;
+                
+                const deptName = String(row[deptIdx]).trim();
+                const catName = String(row[catIdx]).trim();
+                const amount = parseInt(row[amountIdx]) || 0;
+                
+                const dept = DEPARTMENTS.find(d => d.name === deptName);
+                const cat = CATEGORIES.find(c => c.name === catName);
+                
+                if (!dept) {
+                    errors.push(`행 ${i+1}: '${deptName}' 부서를 찾을 수 없음`);
+                    continue;
+                }
+                if (!cat) {
+                    errors.push(`행 ${i+1}: '${catName}' 항목을 찾을 수 없음`);
+                    continue;
+                }
+                
+                newPlans.push({
+                    id: `p_${dept.id}_${cat.id}`,
+                    year: currentYear,
+                    departmentId: dept.id,
+                    categoryId: cat.id,
+                    amount: amount
+                });
+            }
+            
+            if (errors.length > 0) {
+                if (!confirm(`${errors.length}개의 오류가 있습니다.\n\n${errors.slice(0, 5).join('\n')}${errors.length > 5 ? '\n...' : ''}\n\n오류 무시하고 나머지를 적용할까요?`)) {
+                    event.target.value = '';
+                    return;
+                }
+            }
+            
+            if (newPlans.length === 0) {
+                showNotification('유효한 데이터가 없습니다.', 'error');
+                event.target.value = '';
+                return;
+            }
+            
+            if (!confirm(`${newPlans.length}개 항목을 업로드합니다.\n\n기존 ${currentYear}년 예산 계획이 덮어씌워집니다.\n계속하시겠습니까?`)) {
+                event.target.value = '';
+                return;
+            }
+            
+            // 기존 계획 중 다른 연도 보존
+            const existingPlans = JSON.parse(localStorage.getItem(STORAGE_KEYS.BUDGET_PLANS) || '[]');
+            const otherYearPlans = existingPlans.filter(p => p.year !== currentYear);
+            
+            // 새 계획 저장
+            const allPlans = [...otherYearPlans, ...newPlans];
+            localStorage.setItem(STORAGE_KEYS.BUDGET_PLANS, JSON.stringify(allPlans));
+            
+            showNotification(`${newPlans.length}개 항목이 업로드되었습니다.`, 'success');
+            renderBudgetStatus();
+            renderSidebarBudget();
+            
+        } catch (err) {
+            console.error(err);
+            showNotification('파일 읽기 실패: ' + err.message, 'error');
+        }
+        
+        event.target.value = '';
+    };
+    
+    reader.readAsArrayBuffer(file);
+}
+
+// ============================================
+// v3.2: 보고서 생성 화면
+// ============================================
+function showReport() {
+    // v3.3: 권한 체크 (안전장치)
+    if (!canAccessReport()) {
+        showNotification('보고서 메뉴에 접근할 권한이 없습니다.', 'error');
+        showDashboard();
+        return;
+    }
+    
+    switchView('reportView');
+    document.querySelector('[data-view="report"]').classList.add('active');
+    initReportView();
+}
+
+function initReportView() {
+    // 연도 옵션
+    const yearSelect = document.getElementById('reportYear');
+    if (yearSelect.children.length === 0) {
+        const currentYear = new Date().getFullYear();
+        for (let y = currentYear - 1; y <= currentYear + 1; y++) {
+            const opt = document.createElement('option');
+            opt.value = y;
+            opt.textContent = `${y}년`;
+            if (y === currentYear) opt.selected = true;
+            yearSelect.appendChild(opt);
+        }
+    }
+    
+    // 부서 옵션 - v3.3: 권한별 처리
+    const deptSelect = document.getElementById('reportDepartment');
+    deptSelect.innerHTML = ''; // 기존 옵션 제거 (재진입 시 갱신)
+    
+    if (canViewAllDepartmentsReport()) {
+        // 재정/관리자: 전체 + 모든 부서 선택 가능
+        const allOpt = document.createElement('option');
+        allOpt.value = 'all';
+        allOpt.textContent = '전체 부서';
+        deptSelect.appendChild(allOpt);
+        
+        DEPARTMENTS.forEach(d => {
+            const opt = document.createElement('option');
+            opt.value = d.id;
+            opt.textContent = d.name;
+            deptSelect.appendChild(opt);
+        });
+        
+        deptSelect.disabled = false;
+    } else if (isLeaderOnlyOwnDepartment()) {
+        // 부서장: 본인 부서만 (고정)
+        const dept = DEPARTMENTS.find(d => d.id === currentUser.department);
+        if (dept) {
+            const opt = document.createElement('option');
+            opt.value = dept.id;
+            opt.textContent = dept.name;
+            opt.selected = true;
+            deptSelect.appendChild(opt);
+        }
+        deptSelect.disabled = true; // 변경 불가
+    }
+    
+    // v3.3: 부서장에게 안내 메시지
+    let infoMessage = document.getElementById('reportInfoMessage');
+    if (!infoMessage) {
+        infoMessage = document.createElement('div');
+        infoMessage.id = 'reportInfoMessage';
+        infoMessage.className = 'info-display';
+        const reportView = document.getElementById('reportView');
+        const firstInfo = reportView.querySelector('.info-display');
+        if (firstInfo) {
+            firstInfo.parentNode.insertBefore(infoMessage, firstInfo.nextSibling);
+        }
+    }
+    
+    if (isLeaderOnlyOwnDepartment()) {
+        infoMessage.style.display = 'block';
+        infoMessage.style.background = '#e7f3ff';
+        infoMessage.style.borderLeft = '4px solid #3498db';
+        infoMessage.innerHTML = `🔐 <strong>권한 안내:</strong> 부서장은 <strong>${getDepartmentName(currentUser.department)}</strong> 보고서만 조회/다운로드 가능합니다.`;
+    } else {
+        infoMessage.style.display = 'none';
+    }
+    
+    // 자동 미리보기
+    generateReport();
+}
+
+function getReportPeriod() {
+    const period = document.querySelector('input[name="reportPeriod"]:checked').value;
+    const year = parseInt(document.getElementById('reportYear').value);
+    
+    let startMonth, endMonth, label;
+    switch(period) {
+        case 'q1': startMonth = 1; endMonth = 3; label = '1분기'; break;
+        case 'q2': startMonth = 4; endMonth = 6; label = '2분기'; break;
+        case 'q3': startMonth = 7; endMonth = 9; label = '3분기'; break;
+        case 'q4': startMonth = 10; endMonth = 12; label = '4분기'; break;
+        case 'h1': startMonth = 1; endMonth = 6; label = '상반기'; break;
+        case 'h2': startMonth = 7; endMonth = 12; label = '하반기'; break;
+        case 'annual': startMonth = 1; endMonth = 12; label = '연간'; break;
+    }
+    
+    const startDate = new Date(year, startMonth - 1, 1);
+    const endDate = new Date(year, endMonth, 0); // 해당 월 마지막 날
+    
+    return { period, year, startMonth, endMonth, label, startDate, endDate };
+}
+
+function getReportData() {
+    const { year, startDate, endDate } = getReportPeriod();
+    let deptFilter = document.getElementById('reportDepartment').value;
+    
+    // v3.3: 부서장은 본인 부서만 강제 (안전장치)
+    if (isLeaderOnlyOwnDepartment()) {
+        deptFilter = currentUser.department;
+    }
+    
+    const requests = JSON.parse(localStorage.getItem(STORAGE_KEYS.REQUESTS) || '[]');
+    const plans = JSON.parse(localStorage.getItem(STORAGE_KEYS.BUDGET_PLANS) || '[]');
+    
+    // 기간 내 승인된 신청
+    const approvedInPeriod = requests.filter(r => {
+        if (r.status !== 'approved') return false;
+        if (!r.financeApproval) return false;
+        const approvedDate = new Date(r.financeApproval.approvedDate);
+        if (approvedDate < startDate || approvedDate > endDate) return false;
+        if (deptFilter !== 'all' && r.department !== deptFilter) return false;
+        return true;
+    });
+    
+    // 부서별 집계
+    const deptList = deptFilter === 'all' ? DEPARTMENTS : DEPARTMENTS.filter(d => d.id === deptFilter);
+    
+    const deptSummary = deptList.map(d => {
+        const yearPlans = plans.filter(p => p.year === year && p.departmentId === d.id);
+        const totalPlan = yearPlans.reduce((s, p) => s + p.amount, 0);
+        const periodApproved = approvedInPeriod.filter(r => r.department === d.id);
+        const totalApproved = periodApproved.reduce((s, r) => s + r.amount, 0);
+        
+        return {
+            id: d.id,
+            name: d.name,
+            totalPlan,
+            totalApproved,
+            count: periodApproved.length,
+            usageRate: totalPlan > 0 ? ((totalApproved/totalPlan)*100).toFixed(1) : '0'
+        };
+    }).filter(d => d.totalPlan > 0 || d.totalApproved > 0);
+    
+    // 항목별 집계
+    const catSummary = CATEGORIES.map(cat => {
+        let totalPlan = 0;
+        let totalApproved = 0;
+        let count = 0;
+        
+        deptList.forEach(d => {
+            const plan = plans.find(p => p.year === year && p.departmentId === d.id && p.categoryId === cat.id);
+            if (plan) totalPlan += plan.amount;
+            const cats = approvedInPeriod.filter(r => r.department === d.id && r.category === cat.id);
+            totalApproved += cats.reduce((s, r) => s + r.amount, 0);
+            count += cats.length;
+        });
+        
+        return {
+            id: cat.id,
+            name: cat.name,
+            totalPlan,
+            totalApproved,
+            count,
+            usageRate: totalPlan > 0 ? ((totalApproved/totalPlan)*100).toFixed(1) : '0'
+        };
+    }).filter(c => c.totalPlan > 0 || c.totalApproved > 0);
+    
+    // 월별 집계
+    const monthlyData = {};
+    approvedInPeriod.forEach(r => {
+        const month = new Date(r.financeApproval.approvedDate).getMonth() + 1;
+        if (!monthlyData[month]) monthlyData[month] = { count: 0, amount: 0 };
+        monthlyData[month].count++;
+        monthlyData[month].amount += r.amount;
+    });
+    
+    return { 
+        approvedInPeriod, 
+        deptSummary, 
+        catSummary, 
+        monthlyData,
+        totalPlan: deptSummary.reduce((s, d) => s + d.totalPlan, 0),
+        totalApproved: deptSummary.reduce((s, d) => s + d.totalApproved, 0),
+        totalCount: approvedInPeriod.length
+    };
+}
+
+function updateReportPreview() {
+    // 라디오 옵션 시각적 피드백
+    document.querySelectorAll('.report-period-option').forEach(label => {
+        const radio = label.querySelector('input[type="radio"]');
+        if (radio && radio.checked) {
+            label.style.borderColor = '#667eea';
+            label.style.background = '#f0f4ff';
+        } else {
+            label.style.borderColor = '#e0e0e0';
+            label.style.background = 'white';
+        }
+    });
+    
+    if (document.getElementById('reportPreview').innerHTML) {
+        generateReport();
+    }
+}
+
+function generateReport() {
+    // v3.3: 권한 체크
+    if (!canAccessReport()) {
+        showNotification('보고서 접근 권한이 없습니다.', 'error');
+        return;
+    }
+    
+    const { year, label } = getReportPeriod();
+    const data = getReportData();
+    let deptFilter = document.getElementById('reportDepartment').value;
+    
+    // v3.3: 부서장은 본인 부서로 강제
+    if (isLeaderOnlyOwnDepartment()) {
+        deptFilter = currentUser.department;
+    }
+    
+    const deptName = deptFilter === 'all' ? '전체 부서' : getDepartmentName(deptFilter);
+    
+    const overallRate = data.totalPlan > 0 ? ((data.totalApproved/data.totalPlan)*100).toFixed(1) : '0';
+    
+    let html = `
+        <div style="background:white;padding:30px;border-radius:12px;border:1px solid #e0e0e0;box-shadow:0 2px 8px rgba(0,0,0,0.05)">
+            <!-- 보고서 헤더 -->
+            <div style="text-align:center;margin-bottom:30px;padding-bottom:20px;border-bottom:2px solid #667eea">
+                <h2 style="color:#2c3e50;margin-bottom:8px">교회 예산 집행 보고서</h2>
+                <p style="color:#7f8c8d;font-size:14px">${year}년 ${label} · ${deptName}</p>
+                <p style="color:#95a5a6;font-size:12px;margin-top:5px">생성일: ${new Date().toLocaleDateString('ko-KR')} · ${currentUser.name} (${ROLE_NAMES[currentUser.role]})</p>
+            </div>
+            
+            <!-- 요약 통계 -->
+            <h3 style="color:#2c3e50;margin-bottom:15px;font-size:16px">📊 집행 요약</h3>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:30px">
+                <div class="stat-card info">
+                    <div class="stat-number" style="font-size:18px">${formatMoney(data.totalPlan)}</div>
+                    <div class="stat-label">연간 계획</div>
+                </div>
+                <div class="stat-card success">
+                    <div class="stat-number" style="font-size:18px">${formatMoney(data.totalApproved)}</div>
+                    <div class="stat-label">기간 집행</div>
+                    <div class="stat-sub">${overallRate}%</div>
+                </div>
+                <div class="stat-card warning">
+                    <div class="stat-number">${data.totalCount}건</div>
+                    <div class="stat-label">승인 건수</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" style="font-size:18px">${formatMoney(data.totalPlan - data.totalApproved)}</div>
+                    <div class="stat-label">잔여 예산</div>
+                </div>
+            </div>
+            
+            <!-- 부서별 집행 -->
+            <h3 style="color:#2c3e50;margin-bottom:15px;font-size:16px">🏢 부서별 집행 현황</h3>
+            <table class="budget-plan-table" style="margin-bottom:30px">
+                <thead>
+                    <tr>
+                        <th>부서</th>
+                        <th class="amount">연간 계획</th>
+                        <th class="amount">기간 집행</th>
+                        <th class="amount">건수</th>
+                        <th class="amount">집행률</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${data.deptSummary.map(d => {
+                        const rate = parseFloat(d.usageRate);
+                        let color = '#27ae60';
+                        if (rate >= 90) color = '#e74c3c';
+                        else if (rate >= 70) color = '#f39c12';
+                        return `
+                            <tr>
+                                <td><strong>${d.name}</strong></td>
+                                <td class="amount">${formatMoney(d.totalPlan)}</td>
+                                <td class="amount" style="color:#27ae60">${formatMoney(d.totalApproved)}</td>
+                                <td class="amount">${d.count}건</td>
+                                <td class="amount" style="color:${color}"><strong>${d.usageRate}%</strong></td>
+                            </tr>
+                        `;
+                    }).join('')}
+                </tbody>
+            </table>
+            
+            <!-- 항목별 집행 -->
+            <h3 style="color:#2c3e50;margin-bottom:15px;font-size:16px">📋 항목별 집행 현황</h3>
+            <table class="budget-plan-table" style="margin-bottom:30px">
+                <thead>
+                    <tr>
+                        <th>항목</th>
+                        <th class="amount">연간 계획</th>
+                        <th class="amount">기간 집행</th>
+                        <th class="amount">건수</th>
+                        <th class="amount">집행률</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${data.catSummary.map(c => {
+                        const rate = parseFloat(c.usageRate);
+                        let color = '#27ae60';
+                        if (rate >= 90) color = '#e74c3c';
+                        else if (rate >= 70) color = '#f39c12';
+                        return `
+                            <tr>
+                                <td><strong>${c.name}</strong></td>
+                                <td class="amount">${formatMoney(c.totalPlan)}</td>
+                                <td class="amount" style="color:#27ae60">${formatMoney(c.totalApproved)}</td>
+                                <td class="amount">${c.count}건</td>
+                                <td class="amount" style="color:${color}"><strong>${c.usageRate}%</strong></td>
+                            </tr>
+                        `;
+                    }).join('')}
+                </tbody>
+            </table>
+            
+            <!-- 월별 추이 (간단 차트) -->
+            ${Object.keys(data.monthlyData).length > 0 ? `
+                <h3 style="color:#2c3e50;margin-bottom:15px;font-size:16px">📈 월별 집행 추이</h3>
+                <div style="background:#f8f9fa;padding:20px;border-radius:8px;margin-bottom:30px">
+                    ${(() => {
+                        const months = Object.keys(data.monthlyData).map(Number).sort((a,b)=>a-b);
+                        const maxAmount = Math.max(...months.map(m => data.monthlyData[m].amount));
+                        return months.map(m => {
+                            const d = data.monthlyData[m];
+                            const pct = maxAmount > 0 ? (d.amount/maxAmount*100) : 0;
+                            return `
+                                <div style="margin-bottom:10px">
+                                    <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:13px">
+                                        <span><strong>${m}월</strong></span>
+                                        <span>${formatMoney(d.amount)} (${d.count}건)</span>
+                                    </div>
+                                    <div style="background:#e0e0e0;height:24px;border-radius:4px;overflow:hidden">
+                                        <div style="background:linear-gradient(90deg,#667eea,#764ba2);height:100%;width:${pct}%;transition:width 0.3s"></div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('');
+                    })()}
+                </div>
+            ` : ''}
+            
+            <!-- 승인 내역 상세 -->
+            <h3 style="color:#2c3e50;margin-bottom:15px;font-size:16px">📑 승인 내역 상세 (${data.approvedInPeriod.length}건)</h3>
+            ${data.approvedInPeriod.length > 0 ? `
+                <table class="budget-plan-table">
+                    <thead>
+                        <tr>
+                            <th>승인일</th>
+                            <th>부서</th>
+                            <th>항목</th>
+                            <th>신청자</th>
+                            <th class="amount">금액</th>
+                            <th>사용 목적</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.approvedInPeriod.slice(0, 50).map(r => `
+                            <tr>
+                                <td>${new Date(r.financeApproval.approvedDate).toLocaleDateString('ko-KR')}</td>
+                                <td>${getDepartmentName(r.department)}</td>
+                                <td>${getCategoryName(r.category)}</td>
+                                <td>${r.requestedByName}</td>
+                                <td class="amount" style="color:#667eea">${formatMoney(r.amount)}</td>
+                                <td style="font-size:12px">${r.purpose.substring(0, 40)}${r.purpose.length > 40 ? '...' : ''}</td>
+                            </tr>
+                        `).join('')}
+                        ${data.approvedInPeriod.length > 50 ? `
+                            <tr><td colspan="6" style="text-align:center;color:#95a5a6;padding:15px">
+                                ...외 ${data.approvedInPeriod.length - 50}건 (엑셀 다운로드 시 전체 확인 가능)
+                            </td></tr>
+                        ` : ''}
+                    </tbody>
+                </table>
+            ` : '<div class="empty-state"><div class="empty-icon">📋</div><p>해당 기간 승인 내역이 없습니다</p></div>'}
+        </div>
+    `;
+    
+    document.getElementById('reportPreview').innerHTML = html;
+}
+
+// ============================================
+// v3.2: 보고서 엑셀 다운로드
+// ============================================
+function downloadReportExcel() {
+    // v3.3: 권한 체크
+    if (!canAccessReport()) {
+        showNotification('보고서 다운로드 권한이 없습니다.', 'error');
+        return;
+    }
+    
+    if (typeof XLSX === 'undefined') {
+        showNotification('엑셀 라이브러리 로딩 중...', 'warning');
+        return;
+    }
+    
+    const { year, label } = getReportPeriod();
+    const data = getReportData();
+    let deptFilter = document.getElementById('reportDepartment').value;
+    
+    // v3.3: 부서장은 본인 부서로 강제 (안전장치)
+    if (isLeaderOnlyOwnDepartment()) {
+        deptFilter = currentUser.department;
+    }
+    
+    const deptName = deptFilter === 'all' ? '전체부서' : getDepartmentName(deptFilter);
+    
+    const wb = XLSX.utils.book_new();
+    
+    // === 시트 1: 요약 ===
+    const summary = [
+        ['교회 예산 집행 보고서'],
+        [`${year}년 ${label}`],
+        [`대상: ${deptName}`],
+        [`생성일: ${new Date().toLocaleDateString('ko-KR')}`],
+        [],
+        ['■ 전체 요약'],
+        ['항목', '값'],
+        ['연간 계획', data.totalPlan],
+        ['기간 집행', data.totalApproved],
+        ['집행률(%)', data.totalPlan > 0 ? parseFloat(((data.totalApproved/data.totalPlan)*100).toFixed(1)) : 0],
+        ['승인 건수', data.totalCount],
+        ['잔여 예산', data.totalPlan - data.totalApproved],
+        [],
+        ['■ 부서별 집행 현황'],
+        ['부서', '연간 계획', '기간 집행', '건수', '집행률(%)'],
+        ...data.deptSummary.map(d => [
+            d.name, d.totalPlan, d.totalApproved, d.count, parseFloat(d.usageRate)
+        ]),
+        [],
+        ['■ 항목별 집행 현황'],
+        ['항목', '연간 계획', '기간 집행', '건수', '집행률(%)'],
+        ...data.catSummary.map(c => [
+            c.name, c.totalPlan, c.totalApproved, c.count, parseFloat(c.usageRate)
+        ]),
+    ];
+    
+    const ws1 = XLSX.utils.aoa_to_sheet(summary);
+    ws1['!cols'] = [{wch:18},{wch:16},{wch:16},{wch:12},{wch:12}];
+    XLSX.utils.book_append_sheet(wb, ws1, '요약');
+    
+    // === 시트 2: 승인 내역 ===
+    const reqData = [
+        ['승인 내역 상세'],
+        [`${year}년 ${label}`],
+        [],
+        ['승인일', '부서', '항목', '신청자', '금액(원)', '사용 목적', '사용 예정일']
+    ];
+    
+    data.approvedInPeriod.forEach(r => {
+        reqData.push([
+            new Date(r.financeApproval.approvedDate).toLocaleDateString('ko-KR'),
+            getDepartmentName(r.department),
+            getCategoryName(r.category),
+            r.requestedByName,
+            r.amount,
+            r.purpose,
+            r.usageDate
+        ]);
+    });
+    
+    const ws2 = XLSX.utils.aoa_to_sheet(reqData);
+    ws2['!cols'] = [{wch:12},{wch:14},{wch:12},{wch:10},{wch:14},{wch:35},{wch:12}];
+    XLSX.utils.book_append_sheet(wb, ws2, '승인 내역');
+    
+    // === 시트 3: 월별 추이 ===
+    const months = Object.keys(data.monthlyData).map(Number).sort((a,b)=>a-b);
+    if (months.length > 0) {
+        const monthlyArr = [
+            ['월별 집행 추이'],
+            [`${year}년 ${label}`],
+            [],
+            ['월', '집행 금액(원)', '건수']
+        ];
+        months.forEach(m => {
+            monthlyArr.push([`${m}월`, data.monthlyData[m].amount, data.monthlyData[m].count]);
+        });
+        
+        const ws3 = XLSX.utils.aoa_to_sheet(monthlyArr);
+        ws3['!cols'] = [{wch:8},{wch:16},{wch:10}];
+        XLSX.utils.book_append_sheet(wb, ws3, '월별 추이');
+    }
+    
+    const filename = `보고서_${year}년_${label}_${deptName}.xlsx`;
+    XLSX.writeFile(wb, filename);
+    showNotification('보고서가 다운로드되었습니다.', 'success');
 }
 
 // ============================================
