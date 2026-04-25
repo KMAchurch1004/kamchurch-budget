@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>교회 예산 관리 시스템 v2</title>
+<title>교회 예산 관리 시스템 v3.1</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -235,6 +235,52 @@ body {
 .stat-number { font-size: 28px; font-weight: bold; color: #2c3e50; margin-bottom: 5px; }
 .stat-label { color: #7f8c8d; font-size: 13px; }
 .stat-sub { color: #95a5a6; font-size: 11px; margin-top: 3px; }
+
+/* ===== v3.1: 클릭 가능한 통계 카드 ===== */
+.stat-card.clickable {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+.stat-card.clickable:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+}
+.stat-card.clickable:hover .stat-number {
+    color: #667eea;
+}
+.stat-card.clickable .stat-arrow {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    font-size: 14px;
+    color: #95a5a6;
+    opacity: 0;
+    transition: opacity 0.3s, transform 0.3s;
+}
+.stat-card.clickable:hover .stat-arrow {
+    opacity: 1;
+    transform: translateX(2px);
+}
+.stat-card.clickable.warning:hover { border-left-width: 6px; }
+.stat-card.clickable.success:hover { border-left-width: 6px; }
+.stat-card.clickable.danger:hover { border-left-width: 6px; }
+.stat-card.clickable.info:hover { border-left-width: 6px; }
+
+.stat-card.clickable::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 2px;
+    width: 0;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    transition: width 0.3s ease;
+}
+.stat-card.clickable:hover::after {
+    width: 100%;
+}
 
 /* ===== 예산 현황 (연간 계획) ===== */
 .budget-overview {
@@ -536,6 +582,230 @@ body {
     font-size: 14px;
 }
 .info-display strong { color: #667eea; }
+
+/* ===== v3: 클릭 가능한 카드 ===== */
+.request-card.clickable {
+    cursor: pointer;
+    position: relative;
+}
+.request-card.clickable::after {
+    content: "🔍 클릭하여 상세 확인";
+    position: absolute;
+    bottom: 10px;
+    right: 15px;
+    font-size: 11px;
+    color: #95a5a6;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+.request-card.clickable:hover::after {
+    opacity: 1;
+}
+.request-card.clickable:hover {
+    border-left-color: #764ba2;
+    background: #f0f4ff;
+}
+
+/* ===== v3: 상세 모달 ===== */
+.detail-modal-content {
+    max-width: 650px !important;
+}
+
+.detail-section {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e0e0e0;
+}
+.detail-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.detail-section-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #667eea;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.detail-info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 5px;
+}
+
+.detail-info-item {
+    font-size: 14px;
+}
+.detail-info-item .label {
+    color: #7f8c8d;
+    font-size: 12px;
+    margin-bottom: 3px;
+}
+.detail-info-item .value {
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.detail-purpose-box {
+    background: #f8f9fa;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.6;
+    margin-top: 5px;
+}
+
+.detail-budget-box {
+    background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+    padding: 15px;
+    border-radius: 10px;
+    border-left: 4px solid #667eea;
+}
+
+.detail-budget-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    font-size: 13px;
+}
+.detail-budget-row.highlight {
+    border-top: 1px solid #ccc;
+    margin-top: 8px;
+    padding-top: 10px;
+    font-weight: bold;
+    font-size: 15px;
+}
+
+/* ===== v3: 처리 이력 타임라인 ===== */
+.history-timeline {
+    position: relative;
+    padding-left: 25px;
+}
+.history-timeline::before {
+    content: '';
+    position: absolute;
+    left: 7px;
+    top: 5px;
+    bottom: 5px;
+    width: 2px;
+    background: #e0e0e0;
+}
+
+.history-item {
+    position: relative;
+    padding-bottom: 15px;
+}
+.history-item::before {
+    content: '';
+    position: absolute;
+    left: -23px;
+    top: 5px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #667eea;
+    border: 2px solid white;
+    box-shadow: 0 0 0 1px #667eea;
+}
+
+.history-item.created::before { background: #3498db; box-shadow: 0 0 0 1px #3498db; }
+.history-item.edited::before { background: #f39c12; box-shadow: 0 0 0 1px #f39c12; }
+.history-item.approved::before { background: #27ae60; box-shadow: 0 0 0 1px #27ae60; }
+.history-item.rejected::before { background: #e74c3c; box-shadow: 0 0 0 1px #e74c3c; }
+.history-item.cancelled::before { background: #95a5a6; box-shadow: 0 0 0 1px #95a5a6; }
+
+.history-item-content {
+    font-size: 13px;
+}
+.history-item-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 3px;
+}
+.history-item-action {
+    font-weight: 600;
+    color: #2c3e50;
+}
+.history-item-date {
+    color: #95a5a6;
+    font-size: 11px;
+}
+.history-item-details {
+    color: #7f8c8d;
+    font-size: 12px;
+    margin-top: 3px;
+}
+.history-item-changes {
+    background: #fff3cd;
+    padding: 6px 10px;
+    border-radius: 6px;
+    margin-top: 5px;
+    font-size: 12px;
+    color: #856404;
+}
+
+/* ===== v3: 액션 버튼 그룹 ===== */
+.action-group {
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    margin-top: 15px;
+}
+.action-group-title {
+    font-size: 12px;
+    color: #7f8c8d;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+.action-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.action-buttons .btn-small {
+    flex: 1;
+    min-width: 100px;
+}
+
+/* ===== v3: 수정 변경사항 하이라이트 ===== */
+.change-highlight {
+    background: #fff3cd;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+/* ===== v3: 툴팁 ===== */
+.tooltip {
+    position: relative;
+    display: inline-block;
+    cursor: help;
+}
+.tooltip::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #2c3e50;
+    color: white;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+}
+.tooltip:hover::after {
+    opacity: 1;
+}
 </style>
 </head>
 <body>
@@ -547,7 +817,7 @@ body {
     <div class="login-box">
         <div class="logo">⛪</div>
         <h1 class="login-title">교회 예산 관리 시스템</h1>
-        <p class="login-subtitle">v2.0 - 연간 예산 계획 연동형</p>
+        <p class="login-subtitle">v3.1 - 통계 카드 클릭으로 빠른 조회</p>
 
         <div id="loginForm">
             <div class="form-group">
@@ -613,7 +883,7 @@ body {
 <div id="mainApp" class="main-app">
     <div class="header">
         <div class="header-left">
-            <h1>⛪ 교회 예산 관리 시스템 <span style="font-size:14px;color:#667eea">v2.0</span></h1>
+            <h1>⛪ 교회 예산 관리 시스템 <span style="font-size:14px;color:#667eea">v3.1</span></h1>
             <p id="currentUserInfo"></p>
         </div>
         <div class="header-right">
@@ -837,6 +1107,55 @@ body {
     </div>
 </div>
 
+<!-- ===== v3: 신청 상세 모달 ===== -->
+<div id="detailModal" class="modal">
+    <div class="modal-content detail-modal-content">
+        <div id="detailModalBody"></div>
+    </div>
+</div>
+
+<!-- ===== v3: 신청 수정 모달 ===== -->
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">✏️ 신청 내용 수정</div>
+        <p style="color:#7f8c8d;margin-bottom:15px;font-size:13px">
+            수정 내역은 자동으로 기록되며, 관련자에게 표시됩니다.
+        </p>
+        
+        <div class="form-group">
+            <label>예산 항목</label>
+            <div id="editCategoryDisplay" style="padding:12px;background:#f8f9fa;border-radius:8px;color:#7f8c8d">
+                <!-- 항목 표시 (변경 불가) -->
+            </div>
+            <small style="color:#95a5a6;font-size:11px">* 항목 변경은 취소 후 재신청하세요</small>
+        </div>
+        
+        <div id="editBudgetStatus"></div>
+        
+        <div class="form-group">
+            <label>신청 금액 *</label>
+            <input type="number" id="editAmount" placeholder="금액" min="1" oninput="checkEditBudgetLimit()">
+        </div>
+        
+        <div id="editAmountWarning"></div>
+        
+        <div class="form-group">
+            <label>사용 목적 *</label>
+            <textarea id="editPurpose" placeholder="사용 목적"></textarea>
+        </div>
+        
+        <div class="form-group">
+            <label>사용 예정일 *</label>
+            <input type="date" id="editUsageDate">
+        </div>
+        
+        <div class="modal-actions">
+            <button class="btn btn-secondary" onclick="closeEditModal()">취소</button>
+            <button class="btn btn-primary" onclick="saveEditRequest()">수정 저장</button>
+        </div>
+    </div>
+</div>
+
 </div>
 
 <script>
@@ -847,14 +1166,16 @@ let currentUser = null;
 let currentFilter = 'all';
 let rejectingRequestId = null;
 let cancellingRequestId = null;
+let viewingRequestId = null;  // v3: 상세 보기 중인 신청
+let editingRequestId = null;  // v3: 수정 중인 신청
 
 const STORAGE_KEYS = {
-    USERS: 'cb_v2_users',
-    REQUESTS: 'cb_v2_requests',
-    CURRENT_USER: 'cb_v2_current_user',
-    BUDGET_PLANS: 'cb_v2_budget_plans',
-    DEPARTMENTS: 'cb_v2_departments',
-    CATEGORIES: 'cb_v2_categories'
+    USERS: 'cb_v3_users',
+    REQUESTS: 'cb_v3_requests',
+    CURRENT_USER: 'cb_v3_current_user',
+    BUDGET_PLANS: 'cb_v3_budget_plans',
+    DEPARTMENTS: 'cb_v3_departments',
+    CATEGORIES: 'cb_v3_categories'
 };
 
 // ============================================
@@ -973,7 +1294,14 @@ function initSampleData() {
             requestDate: new Date(now.getTime() - 86400000).toISOString(),
             status: 'pending-leader',
             leaderApproval: null, financeApproval: null,
-            rejectReason: null, cancelReason: null
+            rejectReason: null, cancelReason: null,
+            history: [{
+                action: 'created',
+                by: '홍길동',
+                byId: 'u1',
+                date: new Date(now.getTime() - 86400000).toISOString(),
+                details: '신청 생성'
+            }]
         },
         {
             id: 'r2',
@@ -989,7 +1317,23 @@ function initSampleData() {
                 approvedDate: new Date(now.getTime() - 86400000).toISOString()
             },
             financeApproval: null,
-            rejectReason: null, cancelReason: null
+            rejectReason: null, cancelReason: null,
+            history: [
+                {
+                    action: 'created',
+                    by: '홍길동',
+                    byId: 'u1',
+                    date: new Date(now.getTime() - 172800000).toISOString(),
+                    details: '신청 생성'
+                },
+                {
+                    action: 'approved',
+                    by: '김부장',
+                    byId: 'u2',
+                    date: new Date(now.getTime() - 86400000).toISOString(),
+                    details: '부서장 승인 (재정 부서로 전달)'
+                }
+            ]
         },
         {
             id: 'r3',
@@ -1008,7 +1352,30 @@ function initSampleData() {
                 approvedBy: '이재정',
                 approvedDate: new Date(now.getTime() - 432000000).toISOString()
             },
-            rejectReason: null, cancelReason: null
+            rejectReason: null, cancelReason: null,
+            history: [
+                {
+                    action: 'created',
+                    by: '홍길동',
+                    byId: 'u1',
+                    date: new Date(now.getTime() - 604800000).toISOString(),
+                    details: '신청 생성'
+                },
+                {
+                    action: 'approved',
+                    by: '김부장',
+                    byId: 'u2',
+                    date: new Date(now.getTime() - 518400000).toISOString(),
+                    details: '부서장 승인 (재정 부서로 전달)'
+                },
+                {
+                    action: 'approved',
+                    by: '이재정',
+                    byId: 'u3',
+                    date: new Date(now.getTime() - 432000000).toISOString(),
+                    details: '재정 최종 승인'
+                }
+            ]
         }
     ];
 
@@ -1309,9 +1676,16 @@ function showNewRequest() {
     document.getElementById('amountWarning').innerHTML = '';
 }
 
-function showRequests() {
+function showRequests(resetViewMode = true) {
     switchView('requestsView');
     document.querySelector('[data-view="requests"]').classList.add('active');
+    
+    // v3.1: 사이드바 메뉴에서 직접 클릭한 경우 viewMode 초기화
+    if (resetViewMode) {
+        requestsViewMode = 'mine';
+        currentFilter = 'all';
+    }
+    
     renderRequests();
 }
 
@@ -1350,19 +1724,23 @@ function renderDashboard() {
         const myRequests = requests.filter(r => r.requestedBy === currentUser.id);
         
         statsGrid.innerHTML = `
-            <div class="stat-card warning">
+            <div class="stat-card warning clickable" onclick="goToRequestsWithFilter('pending')">
+                <span class="stat-arrow">→</span>
                 <div class="stat-number">${myRequests.filter(r => r.status.startsWith('pending')).length}</div>
                 <div class="stat-label">검토 중</div>
             </div>
-            <div class="stat-card success">
+            <div class="stat-card success clickable" onclick="goToRequestsWithFilter('approved')">
+                <span class="stat-arrow">→</span>
                 <div class="stat-number">${myRequests.filter(r => r.status === 'approved').length}</div>
                 <div class="stat-label">승인됨</div>
             </div>
-            <div class="stat-card danger">
+            <div class="stat-card danger clickable" onclick="goToRequestsWithFilter('rejected')">
+                <span class="stat-arrow">→</span>
                 <div class="stat-number">${myRequests.filter(r => r.status === 'rejected').length}</div>
                 <div class="stat-label">반려됨</div>
             </div>
-            <div class="stat-card info">
+            <div class="stat-card info clickable" onclick="goToRequestsWithFilter('all')">
+                <span class="stat-arrow">→</span>
                 <div class="stat-number">${myRequests.length}</div>
                 <div class="stat-label">총 신청</div>
             </div>
@@ -1382,20 +1760,24 @@ function renderDashboard() {
         const pending = deptRequests.filter(r => r.status === 'pending-leader').length;
         
         statsGrid.innerHTML = `
-            <div class="stat-card warning">
+            <div class="stat-card warning clickable" onclick="goToApproval()">
+                <span class="stat-arrow">→</span>
                 <div class="stat-number">${pending}</div>
                 <div class="stat-label">승인 대기</div>
                 <div class="stat-sub">${pending > 0 ? '⚠️ 검토 필요' : '없음'}</div>
             </div>
-            <div class="stat-card info">
+            <div class="stat-card info clickable" onclick="goToDeptRequestsWithFilter('pending-finance')">
+                <span class="stat-arrow">→</span>
                 <div class="stat-number">${deptRequests.filter(r => r.status === 'pending-finance').length}</div>
                 <div class="stat-label">재정 검토 중</div>
             </div>
-            <div class="stat-card success">
+            <div class="stat-card success clickable" onclick="goToDeptRequestsWithFilter('approved')">
+                <span class="stat-arrow">→</span>
                 <div class="stat-number">${deptRequests.filter(r => r.status === 'approved').length}</div>
                 <div class="stat-label">승인 완료</div>
             </div>
-            <div class="stat-card">
+            <div class="stat-card clickable" onclick="goToDeptRequestsWithFilter('all')">
+                <span class="stat-arrow">→</span>
                 <div class="stat-number">${deptRequests.length}</div>
                 <div class="stat-label">전체</div>
             </div>
@@ -1419,21 +1801,25 @@ function renderDashboard() {
         const usedBudget = requests.filter(r => r.status === 'approved').reduce((s, r) => s + r.amount, 0);
         
         statsGrid.innerHTML = `
-            <div class="stat-card warning">
+            <div class="stat-card warning clickable" onclick="goToApproval()">
+                <span class="stat-arrow">→</span>
                 <div class="stat-number">${pending}</div>
                 <div class="stat-label">최종 승인 대기</div>
                 <div class="stat-sub">${pending > 0 ? '⚠️ 검토 필요' : '없음'}</div>
             </div>
-            <div class="stat-card info">
+            <div class="stat-card info clickable" onclick="goToAllRequestsWithFilter('approved')">
+                <span class="stat-arrow">→</span>
                 <div class="stat-number">${totalApproved}</div>
                 <div class="stat-label">승인 완료 (누적)</div>
             </div>
-            <div class="stat-card success">
+            <div class="stat-card success clickable" onclick="goToBudgetStatus()">
+                <span class="stat-arrow">→</span>
                 <div class="stat-number">${totalBudget > 0 ? ((usedBudget/totalBudget)*100).toFixed(1) : 0}%</div>
                 <div class="stat-label">전체 집행률</div>
                 <div class="stat-sub">${formatMoney(usedBudget)} / ${formatMoney(totalBudget)}</div>
             </div>
-            <div class="stat-card danger">
+            <div class="stat-card danger clickable" onclick="goToAllRequestsWithFilter('rejected')">
+                <span class="stat-arrow">→</span>
                 <div class="stat-number">${requests.filter(r => r.status === 'rejected').length}</div>
                 <div class="stat-label">반려</div>
             </div>
@@ -1457,20 +1843,24 @@ function renderDashboard() {
         const pendingAmount = requests.filter(r => r.status.startsWith('pending')).reduce((s, r) => s + r.amount, 0);
         
         statsGrid.innerHTML = `
-            <div class="stat-card info">
+            <div class="stat-card info clickable" onclick="goToBudgetStatus()">
+                <span class="stat-arrow">→</span>
                 <div class="stat-number">${formatMoney(totalBudget)}</div>
                 <div class="stat-label">연간 총 예산</div>
             </div>
-            <div class="stat-card success">
+            <div class="stat-card success clickable" onclick="goToAllRequestsWithFilter('approved')">
+                <span class="stat-arrow">→</span>
                 <div class="stat-number">${formatMoney(usedBudget)}</div>
                 <div class="stat-label">승인 완료</div>
                 <div class="stat-sub">${totalBudget > 0 ? ((usedBudget/totalBudget)*100).toFixed(1) : 0}% 집행</div>
             </div>
-            <div class="stat-card warning">
+            <div class="stat-card warning clickable" onclick="goToAllRequestsWithFilter('pending')">
+                <span class="stat-arrow">→</span>
                 <div class="stat-number">${formatMoney(pendingAmount)}</div>
                 <div class="stat-label">검토 중 금액</div>
             </div>
-            <div class="stat-card">
+            <div class="stat-card clickable" onclick="goToBudgetStatus()">
+                <span class="stat-arrow">→</span>
                 <div class="stat-number">${formatMoney(totalBudget - usedBudget - pendingAmount)}</div>
                 <div class="stat-label">잔여 예산</div>
             </div>
@@ -1697,7 +2087,14 @@ document.getElementById('budgetRequestForm').addEventListener('submit', function
         leaderApproval: null,
         financeApproval: null,
         rejectReason: null,
-        cancelReason: null
+        cancelReason: null,
+        history: [{
+            action: 'created',
+            by: currentUser.name,
+            byId: currentUser.id,
+            date: new Date().toISOString(),
+            details: '신청 생성'
+        }]
     };
     requests.unshift(newRequest);
     localStorage.setItem(STORAGE_KEYS.REQUESTS, JSON.stringify(requests));
@@ -1710,15 +2107,40 @@ document.getElementById('budgetRequestForm').addEventListener('submit', function
 // ============================================
 // 신청 내역
 // ============================================
+// v3.1: 신청 내역 뷰 모드
+let requestsViewMode = 'mine'; // 'mine', 'department', 'all'
+
 function renderRequests() {
     const requests = JSON.parse(localStorage.getItem(STORAGE_KEYS.REQUESTS) || '[]');
-    const myRequests = requests.filter(r => r.requestedBy === currentUser.id);
+    
+    // v3.1: 뷰 모드에 따라 데이터 선택
+    let baseRequests;
+    let viewModeText = '';
+    
+    if (requestsViewMode === 'department') {
+        baseRequests = requests.filter(r => r.department === currentUser.department);
+        viewModeText = `${getDepartmentName(currentUser.department)} 전체 신청`;
+    } else if (requestsViewMode === 'all') {
+        baseRequests = requests;
+        viewModeText = '전체 부서 신청';
+    } else {
+        baseRequests = requests.filter(r => r.requestedBy === currentUser.id);
+        viewModeText = '내 신청 내역';
+    }
 
-    let filtered = myRequests;
-    if (currentFilter === 'pending') filtered = myRequests.filter(r => r.status.startsWith('pending'));
-    else if (currentFilter === 'approved') filtered = myRequests.filter(r => r.status === 'approved');
-    else if (currentFilter === 'rejected') filtered = myRequests.filter(r => r.status === 'rejected');
-    else if (currentFilter === 'cancelled') filtered = myRequests.filter(r => r.status === 'cancelled');
+    let filtered = baseRequests;
+    if (currentFilter === 'pending') filtered = baseRequests.filter(r => r.status.startsWith('pending'));
+    else if (currentFilter === 'pending-leader') filtered = baseRequests.filter(r => r.status === 'pending-leader');
+    else if (currentFilter === 'pending-finance') filtered = baseRequests.filter(r => r.status === 'pending-finance');
+    else if (currentFilter === 'approved') filtered = baseRequests.filter(r => r.status === 'approved');
+    else if (currentFilter === 'rejected') filtered = baseRequests.filter(r => r.status === 'rejected');
+    else if (currentFilter === 'cancelled') filtered = baseRequests.filter(r => r.status === 'cancelled');
+
+    // v3.1: 페이지 제목에 뷰 모드 표시
+    const subtitle = document.querySelector('#requestsView .content-subtitle');
+    if (subtitle) {
+        subtitle.textContent = `${viewModeText} (${filtered.length}건)`;
+    }
 
     const list = document.getElementById('requestsList');
     list.innerHTML = filtered.length ? 
@@ -1729,7 +2151,18 @@ function renderRequests() {
 function filterRequests(filter) {
     currentFilter = filter;
     document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
-    event.target.classList.add('active');
+    if (event && event.target) {
+        event.target.classList.add('active');
+    } else {
+        // v3.1: 프로그램에서 호출 시 해당 탭 활성화
+        const tabs = document.querySelectorAll('.filter-tab');
+        tabs.forEach(t => {
+            const onClickAttr = t.getAttribute('onclick') || '';
+            if (onClickAttr.includes(`'${filter}'`)) {
+                t.classList.add('active');
+            }
+        });
+    }
     renderRequests();
 }
 
@@ -1737,13 +2170,11 @@ function renderRequestCard(request, showActions) {
     const statusClass = `status-${request.status}`;
     const statusText = getStatusText(request.status);
     
-    // 취소 가능: 본인 신청이고 부서장 검토 중 상태
-    const canCancel = request.status === 'pending-leader' && 
-                       request.requestedBy === currentUser.id && showActions;
-    
-    // 승인 후 취소 요청 가능: 본인 신청이고 승인 완료 상태
-    const canRequestCancel = request.status === 'approved' && 
-                              request.requestedBy === currentUser.id && showActions;
+    // v3: 권한 체크
+    const isMine = request.requestedBy === currentUser.id;
+    const canEdit = canEditRequest(request);
+    const canCancel = request.status === 'pending-leader' && isMine && showActions;
+    const canRequestCancel = request.status === 'approved' && isMine && showActions;
 
     let approvalInfo = '';
     if (request.leaderApproval) {
@@ -1777,27 +2208,35 @@ function renderRequestCard(request, showActions) {
         `;
     }
 
+    // v3: 액션 버튼 - 수정 버튼 추가
     let actions = '';
-    if (canCancel) {
-        actions = `
-            <div class="request-actions">
-                <button class="btn-small btn-danger" onclick="cancelBeforeApproval('${request.id}')">
-                    신청 취소
-                </button>
-            </div>
-        `;
-    } else if (canRequestCancel) {
-        actions = `
-            <div class="request-actions">
-                <button class="btn-small btn-warning" onclick="showCancelModal('${request.id}')">
-                    ↩️ 취소 요청 (미사용)
-                </button>
-            </div>
-        `;
+    if (showActions) {
+        let buttons = [];
+        
+        if (canEdit) {
+            buttons.push(`<button class="btn-small btn-info" onclick="event.stopPropagation(); showEditModal('${request.id}')">✏️ 수정</button>`);
+        }
+        
+        if (canCancel) {
+            buttons.push(`<button class="btn-small btn-danger" onclick="event.stopPropagation(); cancelBeforeApproval('${request.id}')">❌ 신청 취소</button>`);
+        } else if (canRequestCancel) {
+            buttons.push(`<button class="btn-small btn-warning" onclick="event.stopPropagation(); showCancelModal('${request.id}')">↩️ 취소 요청</button>`);
+        }
+        
+        // 항상 상세 버튼 추가
+        buttons.push(`<button class="btn-small btn-secondary" onclick="event.stopPropagation(); showDetailModal('${request.id}')">📋 상세</button>`);
+        
+        if (buttons.length > 0) {
+            actions = `<div class="request-actions">${buttons.join('')}</div>`;
+        }
     }
 
+    // v3: 카드에 클릭 이벤트 추가
+    const cardClass = `request-card${showActions ? ' clickable' : ' clickable'}`;
+    const onClick = `onclick="showDetailModal('${request.id}')"`;
+
     return `
-        <div class="request-card">
+        <div class="${cardClass}" ${onClick}>
             <div class="request-header">
                 <div>
                     <div class="request-title">${request.purpose}</div>
@@ -1831,6 +2270,35 @@ function renderRequestCard(request, showActions) {
             ${actions}
         </div>
     `;
+}
+
+// ============================================
+// v3: 수정 권한 체크
+// ============================================
+function canEditRequest(request) {
+    // 취소/반려된 건은 수정 불가
+    if (request.status === 'cancelled' || request.status === 'rejected') return false;
+    // 완료된 건도 수정 불가
+    if (request.status === 'approved') return false;
+    
+    const isMine = request.requestedBy === currentUser.id;
+    
+    // 신청자 본인: 부서장 검토 전까지 수정 가능
+    if (isMine && request.status === 'pending-leader') return true;
+    
+    // 부서장: 본인 부서의 부서장 검토 중 건 수정 가능
+    if (currentUser.role === 'leader' && 
+        request.department === currentUser.department && 
+        request.status === 'pending-leader') return true;
+    
+    // 재정 담당자/위원장: 재정 검토 중 수정 가능
+    if ((currentUser.role === 'finance' || currentUser.role === 'financeChair') && 
+        request.status === 'pending-finance') return true;
+    
+    // 관리자: 모든 진행 중 건 수정 가능
+    if (currentUser.role === 'admin' && request.status.startsWith('pending')) return true;
+    
+    return false;
 }
 
 // ============================================
@@ -1945,12 +2413,22 @@ function approveRequest(id) {
     const request = requests.find(r => r.id === id);
     if (!request) return;
 
+    // v3: history 필드 초기화 (기존 데이터 호환)
+    if (!request.history) request.history = [];
+
     if (currentUser.role === 'leader') {
         request.status = 'pending-finance';
         request.leaderApproval = {
             approvedBy: currentUser.name,
             approvedDate: new Date().toISOString()
         };
+        request.history.push({
+            action: 'approved',
+            by: currentUser.name,
+            byId: currentUser.id,
+            date: new Date().toISOString(),
+            details: '부서장 승인 (재정 부서로 전달)'
+        });
         showNotification('승인 완료! 재정 부서로 전달되었습니다.', 'success');
     } else if (currentUser.role === 'finance' || currentUser.role === 'financeChair') {
         request.status = 'approved';
@@ -1958,12 +2436,24 @@ function approveRequest(id) {
             approvedBy: currentUser.name,
             approvedDate: new Date().toISOString()
         };
+        request.history.push({
+            action: 'approved',
+            by: currentUser.name,
+            byId: currentUser.id,
+            date: new Date().toISOString(),
+            details: '재정 최종 승인'
+        });
         showNotification('최종 승인되었습니다!', 'success');
     }
 
     localStorage.setItem(STORAGE_KEYS.REQUESTS, JSON.stringify(requests));
     renderSidebarBudget();
     renderApproval();
+    
+    // v3: 상세 모달이 열려있으면 갱신
+    if (viewingRequestId === id) {
+        showDetailModal(id);
+    }
 }
 
 // ============================================
@@ -1990,12 +2480,26 @@ function confirmReject() {
     const requests = JSON.parse(localStorage.getItem(STORAGE_KEYS.REQUESTS) || '[]');
     const request = requests.find(r => r.id === rejectingRequestId);
     if (request) {
+        if (!request.history) request.history = [];
         request.status = 'rejected';
         request.rejectReason = reason;
+        request.history.push({
+            action: 'rejected',
+            by: currentUser.name,
+            byId: currentUser.id,
+            date: new Date().toISOString(),
+            details: `반려: ${reason}`
+        });
         localStorage.setItem(STORAGE_KEYS.REQUESTS, JSON.stringify(requests));
         showNotification('신청이 반려되었습니다.', 'success');
+        
+        // v3: 상세 모달 갱신
+        const wasViewing = viewingRequestId === rejectingRequestId;
         closeRejectModal();
         renderApproval();
+        if (wasViewing) {
+            showDetailModal(request.id);
+        }
     }
 }
 
@@ -2004,12 +2508,25 @@ function cancelBeforeApproval(id) {
     const requests = JSON.parse(localStorage.getItem(STORAGE_KEYS.REQUESTS) || '[]');
     const request = requests.find(r => r.id === id);
     if (request) {
+        if (!request.history) request.history = [];
         request.status = 'cancelled';
         request.cancelReason = '신청자가 직접 취소';
+        request.history.push({
+            action: 'cancelled',
+            by: currentUser.name,
+            byId: currentUser.id,
+            date: new Date().toISOString(),
+            details: '신청자 직접 취소'
+        });
         localStorage.setItem(STORAGE_KEYS.REQUESTS, JSON.stringify(requests));
         showNotification('신청이 취소되었습니다.', 'success');
         renderRequests();
         renderSidebarBudget();
+        
+        // v3: 상세 모달이 열려있으면 닫기
+        if (viewingRequestId === id) {
+            closeDetailModal();
+        }
     }
 }
 
@@ -2034,13 +2551,26 @@ function confirmCancelRequest() {
     const requests = JSON.parse(localStorage.getItem(STORAGE_KEYS.REQUESTS) || '[]');
     const request = requests.find(r => r.id === cancellingRequestId);
     if (request) {
+        if (!request.history) request.history = [];
         request.status = 'cancelled';
         request.cancelReason = reason + ' (미사용 잔액 반환)';
+        request.history.push({
+            action: 'cancelled',
+            by: currentUser.name,
+            byId: currentUser.id,
+            date: new Date().toISOString(),
+            details: `취소 요청: ${reason}`
+        });
         localStorage.setItem(STORAGE_KEYS.REQUESTS, JSON.stringify(requests));
         showNotification('취소 처리되었습니다. 예산이 반환되었습니다.', 'success');
+        
+        const wasViewing = viewingRequestId === cancellingRequestId;
         closeCancelModal();
         renderRequests();
         renderSidebarBudget();
+        if (wasViewing) {
+            closeDetailModal();
+        }
     }
 }
 
@@ -2232,6 +2762,508 @@ function saveBudgetPlan() {
     closeBudgetPlanModal();
     renderBudgetPlan();
     renderSidebarBudget();
+}
+
+// ============================================
+// v3.1: 통계 카드 클릭 → 자동 필터링 네비게이션
+// ============================================
+
+// 내 신청 내역으로 이동 + 필터 적용
+function goToRequestsWithFilter(filter) {
+    requestsViewMode = 'mine';
+    currentFilter = filter;
+    showRequests(false); // viewMode 유지
+    
+    // 탭 활성화
+    setTimeout(() => {
+        const tabs = document.querySelectorAll('#requestsView .filter-tab');
+        tabs.forEach(t => t.classList.remove('active'));
+        tabs.forEach(t => {
+            const onClickAttr = t.getAttribute('onclick') || '';
+            if (onClickAttr.includes(`'${filter}'`)) {
+                t.classList.add('active');
+            }
+        });
+        renderRequests();
+        
+        // 부드러운 스크롤
+        document.getElementById('requestsView').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
+}
+
+// 부서 전체 신청으로 이동 (부서장용)
+function goToDeptRequestsWithFilter(filter) {
+    requestsViewMode = 'department';
+    currentFilter = filter;
+    showRequests(false); // viewMode 유지
+    
+    setTimeout(() => {
+        const tabs = document.querySelectorAll('#requestsView .filter-tab');
+        tabs.forEach(t => t.classList.remove('active'));
+        tabs.forEach(t => {
+            const onClickAttr = t.getAttribute('onclick') || '';
+            if (onClickAttr.includes(`'${filter}'`)) {
+                t.classList.add('active');
+            }
+        });
+        renderRequests();
+        document.getElementById('requestsView').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
+}
+
+// 전체 부서 신청으로 이동 (재정/관리자용)
+function goToAllRequestsWithFilter(filter) {
+    requestsViewMode = 'all';
+    currentFilter = filter;
+    showRequests(false); // viewMode 유지
+    
+    setTimeout(() => {
+        const tabs = document.querySelectorAll('#requestsView .filter-tab');
+        tabs.forEach(t => t.classList.remove('active'));
+        tabs.forEach(t => {
+            const onClickAttr = t.getAttribute('onclick') || '';
+            if (onClickAttr.includes(`'${filter}'`)) {
+                t.classList.add('active');
+            }
+        });
+        renderRequests();
+        document.getElementById('requestsView').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
+}
+
+// 승인 관리로 이동
+function goToApproval() {
+    showApproval();
+    setTimeout(() => {
+        document.getElementById('approvalView').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
+}
+
+// 예산 현황으로 이동
+function goToBudgetStatus() {
+    showBudgetStatus();
+    setTimeout(() => {
+        document.getElementById('budgetStatusView').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
+}
+
+// ============================================
+// v3: 신청 상세 모달
+// ============================================
+function showDetailModal(id) {
+    const requests = JSON.parse(localStorage.getItem(STORAGE_KEYS.REQUESTS) || '[]');
+    const request = requests.find(r => r.id === id);
+    if (!request) return;
+    
+    viewingRequestId = id;
+    
+    // history 필드 없으면 빈 배열 초기화
+    if (!request.history) request.history = [];
+    
+    const statusClass = `status-${request.status}`;
+    const statusText = getStatusText(request.status);
+    const budgetStatus = getBudgetStatus(request.department, request.category);
+    
+    // 권한 체크
+    const isMine = request.requestedBy === currentUser.id;
+    const canEdit = canEditRequest(request);
+    const canCancel = request.status === 'pending-leader' && isMine;
+    const canRequestCancel = request.status === 'approved' && isMine;
+    
+    // 승인 권한 체크
+    const canApproveAsLeader = currentUser.role === 'leader' && 
+                                request.department === currentUser.department && 
+                                request.status === 'pending-leader';
+    const canApproveAsFinance = (currentUser.role === 'finance' || currentUser.role === 'financeChair') && 
+                                 request.status === 'pending-finance';
+    const canApprove = canApproveAsLeader || canApproveAsFinance;
+    
+    // 처리 이력 HTML
+    let historyHtml = '';
+    if (request.history.length > 0) {
+        historyHtml = '<div class="history-timeline">';
+        request.history.forEach(h => {
+            const actionNames = {
+                'created': '신청',
+                'edited': '수정',
+                'approved': '승인',
+                'rejected': '반려',
+                'cancelled': '취소'
+            };
+            
+            let changesHtml = '';
+            if (h.changes) {
+                const changeList = [];
+                if (h.changes.amount) {
+                    changeList.push(`금액: ${formatMoney(h.changes.amount.from)} → ${formatMoney(h.changes.amount.to)}`);
+                }
+                if (h.changes.purpose) {
+                    changeList.push(`목적 변경`);
+                }
+                if (h.changes.usageDate) {
+                    changeList.push(`사용일: ${h.changes.usageDate.from} → ${h.changes.usageDate.to}`);
+                }
+                if (changeList.length > 0) {
+                    changesHtml = `<div class="history-item-changes">📝 ${changeList.join(' / ')}</div>`;
+                }
+            }
+            
+            historyHtml += `
+                <div class="history-item ${h.action}">
+                    <div class="history-item-content">
+                        <div class="history-item-header">
+                            <span class="history-item-action">${actionNames[h.action] || h.action} - ${h.by}</span>
+                            <span class="history-item-date">${new Date(h.date).toLocaleString('ko-KR')}</span>
+                        </div>
+                        <div class="history-item-details">${h.details || ''}</div>
+                        ${changesHtml}
+                    </div>
+                </div>
+            `;
+        });
+        historyHtml += '</div>';
+    } else {
+        historyHtml = '<p style="color:#95a5a6;font-size:13px">처리 이력이 없습니다.</p>';
+    }
+    
+    // 예산 상태 표시
+    let balanceClass = 'balance-ok';
+    if (budgetStatus.available <= 0) balanceClass = 'balance-danger';
+    else if (budgetStatus.available < budgetStatus.totalBudget * 0.2) balanceClass = 'balance-warning';
+    
+    // 역할별 버튼
+    let actionButtons = [];
+    
+    // 신청자 본인 버튼
+    if (isMine) {
+        if (canEdit) {
+            actionButtons.push(`<button class="btn-small btn-info" onclick="showEditModalFromDetail('${request.id}')">✏️ 수정</button>`);
+        }
+        if (canCancel) {
+            actionButtons.push(`<button class="btn-small btn-danger" onclick="cancelBeforeApproval('${request.id}')">❌ 신청 취소</button>`);
+        } else if (canRequestCancel) {
+            actionButtons.push(`<button class="btn-small btn-warning" onclick="showCancelModal('${request.id}')">↩️ 취소 요청 (미사용)</button>`);
+        }
+    }
+    
+    // 승인자 버튼
+    if (canApprove) {
+        const approveText = canApproveAsLeader ? '✅ 승인 → 재정부로' : '✅ 최종 승인';
+        actionButtons.push(`<button class="btn-small btn-success" onclick="approveRequest('${request.id}')">${approveText}</button>`);
+        actionButtons.push(`<button class="btn-small btn-danger" onclick="showRejectModal('${request.id}')">❌ 반려</button>`);
+        
+        // 승인자도 수정 가능 (권한이 있으면)
+        if (canEdit && !isMine) {
+            actionButtons.push(`<button class="btn-small btn-info" onclick="showEditModalFromDetail('${request.id}')">✏️ 수정</button>`);
+        }
+    }
+    
+    // 관리자 버튼 (다른 역할이 아닌 경우)
+    if (currentUser.role === 'admin' && !canApprove && !isMine && canEdit) {
+        actionButtons.push(`<button class="btn-small btn-info" onclick="showEditModalFromDetail('${request.id}')">✏️ 수정 (관리자)</button>`);
+    }
+    
+    let actionSection = '';
+    if (actionButtons.length > 0) {
+        actionSection = `
+            <div class="action-group">
+                <div class="action-group-title">🛠️ 가능한 작업</div>
+                <div class="action-buttons">
+                    ${actionButtons.join('')}
+                </div>
+            </div>
+        `;
+    } else {
+        actionSection = `
+            <div class="action-group">
+                <div class="action-group-title">🔒 현재 작업 가능 권한 없음</div>
+                <p style="color:#95a5a6;font-size:13px;margin:0">
+                    이 신청은 현재 단계에서 조회만 가능합니다.
+                </p>
+            </div>
+        `;
+    }
+    
+    // 모달 내용 구성
+    const body = document.getElementById('detailModalBody');
+    body.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:20px">
+            <div style="flex:1">
+                <div style="font-size:20px;font-weight:bold;color:#2c3e50;margin-bottom:5px">
+                    ${request.purpose.split('\n')[0].substring(0, 50)}${request.purpose.length > 50 ? '...' : ''}
+                </div>
+                <div style="color:#7f8c8d;font-size:13px">
+                    ${getDepartmentName(request.department)} · ${getCategoryName(request.category)}
+                </div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:start">
+                <span class="status-badge ${statusClass}">${statusText}</span>
+                <button onclick="closeDetailModal()" style="background:none;border:none;font-size:24px;cursor:pointer;color:#95a5a6;padding:0;line-height:1">×</button>
+            </div>
+        </div>
+        
+        <div class="detail-section">
+            <div class="detail-section-title">📋 신청 정보</div>
+            <div class="detail-info-grid">
+                <div class="detail-info-item">
+                    <div class="label">신청 금액</div>
+                    <div class="value" style="color:#667eea;font-size:18px">${formatMoney(request.amount)}</div>
+                </div>
+                <div class="detail-info-item">
+                    <div class="label">사용 예정일</div>
+                    <div class="value">${request.usageDate}</div>
+                </div>
+                <div class="detail-info-item">
+                    <div class="label">신청자</div>
+                    <div class="value">${request.requestedByName}</div>
+                </div>
+                <div class="detail-info-item">
+                    <div class="label">신청일</div>
+                    <div class="value">${new Date(request.requestDate).toLocaleDateString('ko-KR')}</div>
+                </div>
+            </div>
+            <div style="margin-top:10px">
+                <div class="label" style="color:#7f8c8d;font-size:12px;margin-bottom:5px">사용 목적</div>
+                <div class="detail-purpose-box">${request.purpose}</div>
+            </div>
+        </div>
+        
+        <div class="detail-section">
+            <div class="detail-section-title">💡 ${getCategoryName(request.category)} 예산 현황</div>
+            <div class="detail-budget-box">
+                <div class="detail-budget-row">
+                    <span>연간 계획</span>
+                    <span><strong>${formatMoney(budgetStatus.totalBudget)}</strong></span>
+                </div>
+                <div class="detail-budget-row">
+                    <span>이미 승인됨</span>
+                    <span>${formatMoney(budgetStatus.approved)}</span>
+                </div>
+                <div class="detail-budget-row">
+                    <span>검토 중</span>
+                    <span>${formatMoney(budgetStatus.pending)}</span>
+                </div>
+                <div class="detail-budget-row highlight">
+                    <span>사용 가능 잔액</span>
+                    <span class="${balanceClass}"><strong>${formatMoney(budgetStatus.available)}</strong></span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="detail-section">
+            <div class="detail-section-title">📌 처리 이력</div>
+            ${historyHtml}
+        </div>
+        
+        ${request.rejectReason ? `
+            <div class="detail-section">
+                <div class="detail-section-title" style="color:#e74c3c">⚠️ 반려 사유</div>
+                <div style="background:#f8d7da;color:#721c24;padding:12px;border-radius:8px;font-size:13px">
+                    ${request.rejectReason}
+                </div>
+            </div>
+        ` : ''}
+        
+        ${request.cancelReason ? `
+            <div class="detail-section">
+                <div class="detail-section-title" style="color:#95a5a6">↩️ 취소 사유</div>
+                <div style="background:#e2e3e5;color:#383d41;padding:12px;border-radius:8px;font-size:13px">
+                    ${request.cancelReason}
+                </div>
+            </div>
+        ` : ''}
+        
+        ${actionSection}
+    `;
+    
+    document.getElementById('detailModal').classList.add('active');
+}
+
+function closeDetailModal() {
+    viewingRequestId = null;
+    document.getElementById('detailModal').classList.remove('active');
+}
+
+// ============================================
+// v3: 신청 수정 모달
+// ============================================
+function showEditModal(id) {
+    const requests = JSON.parse(localStorage.getItem(STORAGE_KEYS.REQUESTS) || '[]');
+    const request = requests.find(r => r.id === id);
+    if (!request) return;
+    
+    if (!canEditRequest(request)) {
+        showNotification('현재 수정 권한이 없습니다.', 'error');
+        return;
+    }
+    
+    editingRequestId = id;
+    
+    // 폼에 기존 값 채우기
+    document.getElementById('editCategoryDisplay').textContent = 
+        `${getDepartmentName(request.department)} · ${getCategoryName(request.category)}`;
+    document.getElementById('editAmount').value = request.amount;
+    document.getElementById('editPurpose').value = request.purpose;
+    document.getElementById('editUsageDate').value = request.usageDate;
+    
+    // 예산 상태 표시
+    updateEditBudgetStatus(request);
+    
+    document.getElementById('editModal').classList.add('active');
+}
+
+// 상세 모달에서 수정 모달로 전환
+function showEditModalFromDetail(id) {
+    closeDetailModal();
+    setTimeout(() => showEditModal(id), 100);
+}
+
+function closeEditModal() {
+    editingRequestId = null;
+    document.getElementById('editModal').classList.remove('active');
+}
+
+function updateEditBudgetStatus(request) {
+    const budgetStatus = getBudgetStatus(request.department, request.category);
+    
+    // 자기 자신의 현재 금액은 pending에서 제외
+    const myPending = budgetStatus.pending - request.amount;
+    const availableForEdit = budgetStatus.totalBudget - budgetStatus.approved - myPending;
+    
+    let balanceClass = 'balance-ok';
+    if (availableForEdit <= 0) balanceClass = 'balance-danger';
+    else if (availableForEdit < budgetStatus.totalBudget * 0.2) balanceClass = 'balance-warning';
+    
+    document.getElementById('editBudgetStatus').innerHTML = `
+        <div class="budget-status-box" style="margin:10px 0">
+            <h4>💡 ${getCategoryName(request.category)} 예산 정보</h4>
+            <div class="budget-status-row">
+                <span>연간 계획</span>
+                <span><strong>${formatMoney(budgetStatus.totalBudget)}</strong></span>
+            </div>
+            <div class="budget-status-row">
+                <span>이미 승인됨</span>
+                <span>${formatMoney(budgetStatus.approved)}</span>
+            </div>
+            <div class="budget-status-row">
+                <span>다른 신청 검토 중</span>
+                <span>${formatMoney(myPending)}</span>
+            </div>
+            <div class="budget-status-row highlight">
+                <span>수정 가능 한도</span>
+                <span class="${balanceClass}"><strong>${formatMoney(availableForEdit)}</strong></span>
+            </div>
+        </div>
+    `;
+}
+
+function checkEditBudgetLimit() {
+    const requests = JSON.parse(localStorage.getItem(STORAGE_KEYS.REQUESTS) || '[]');
+    const request = requests.find(r => r.id === editingRequestId);
+    if (!request) return;
+    
+    const amount = parseInt(document.getElementById('editAmount').value) || 0;
+    const warningDiv = document.getElementById('editAmountWarning');
+    
+    if (amount <= 0) {
+        warningDiv.innerHTML = '';
+        return;
+    }
+    
+    const budgetStatus = getBudgetStatus(request.department, request.category);
+    const myPending = budgetStatus.pending - request.amount;
+    const available = budgetStatus.totalBudget - budgetStatus.approved - myPending;
+    
+    if (amount > available) {
+        warningDiv.innerHTML = `
+            <div class="error-message">
+                ❌ 한도 초과!<br>
+                수정 금액: ${formatMoney(amount)} / 한도: ${formatMoney(available)}
+            </div>
+        `;
+    } else if (amount > available * 0.8) {
+        warningDiv.innerHTML = `
+            <div class="warning-message">
+                ⚠️ 한도의 80% 이상 사용
+            </div>
+        `;
+    } else {
+        warningDiv.innerHTML = `
+            <div style="background:#d4edda;color:#155724;padding:10px;border-radius:8px;margin:10px 0;font-size:13px;border-left:4px solid #27ae60">
+                ✓ 수정 가능
+            </div>
+        `;
+    }
+}
+
+function saveEditRequest() {
+    const amount = parseInt(document.getElementById('editAmount').value);
+    const purpose = document.getElementById('editPurpose').value.trim();
+    const usageDate = document.getElementById('editUsageDate').value;
+    
+    if (!amount || amount <= 0 || !purpose || !usageDate) {
+        showNotification('모든 필드를 올바르게 입력하세요.', 'error');
+        return;
+    }
+    
+    const requests = JSON.parse(localStorage.getItem(STORAGE_KEYS.REQUESTS) || '[]');
+    const request = requests.find(r => r.id === editingRequestId);
+    if (!request) return;
+    
+    // 한도 체크
+    const budgetStatus = getBudgetStatus(request.department, request.category);
+    const myPending = budgetStatus.pending - request.amount;
+    const available = budgetStatus.totalBudget - budgetStatus.approved - myPending;
+    
+    if (amount > available) {
+        if (!confirm(`한도를 초과합니다. 그래도 저장하시겠습니까?\n초과 금액: ${formatMoney(amount - available)}`)) {
+            return;
+        }
+    }
+    
+    // 변경사항 감지
+    const changes = {};
+    if (request.amount !== amount) {
+        changes.amount = { from: request.amount, to: amount };
+    }
+    if (request.purpose !== purpose) {
+        changes.purpose = { from: request.purpose, to: purpose };
+    }
+    if (request.usageDate !== usageDate) {
+        changes.usageDate = { from: request.usageDate, to: usageDate };
+    }
+    
+    if (Object.keys(changes).length === 0) {
+        showNotification('변경된 내용이 없습니다.', 'info');
+        return;
+    }
+    
+    // 값 업데이트
+    request.amount = amount;
+    request.purpose = purpose;
+    request.usageDate = usageDate;
+    
+    // 이력 추가
+    if (!request.history) request.history = [];
+    request.history.push({
+        action: 'edited',
+        by: currentUser.name,
+        byId: currentUser.id,
+        date: new Date().toISOString(),
+        details: `${currentUser.name}님이 수정`,
+        changes
+    });
+    
+    localStorage.setItem(STORAGE_KEYS.REQUESTS, JSON.stringify(requests));
+    
+    showNotification('수정이 저장되었습니다.', 'success');
+    closeEditModal();
+    
+    // 화면 갱신
+    renderSidebarBudget();
+    renderRequests();
+    renderApproval();
+    renderDashboard();
 }
 
 // ============================================
