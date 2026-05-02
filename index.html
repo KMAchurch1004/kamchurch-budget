@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>교회 예산 관리 시스템 v3.4</title>
+<title>교회 예산 관리 시스템 v3.7</title>
 <!-- SheetJS for Excel handling -->
 <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 <style>
@@ -900,6 +900,387 @@ body {
     }
 }
 
+/* ===== v3.5: 알림 시스템 ===== */
+
+/* 헤더의 알림 벨 */
+.notification-bell {
+    position: relative;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 8px;
+    transition: background 0.2s;
+    font-size: 18px;
+    user-select: none;
+}
+.notification-bell:hover {
+    background: #f0f4ff;
+}
+.notification-badge {
+    position: absolute;
+    top: 2px;
+    right: 4px;
+    background: #e74c3c;
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    min-width: 16px;
+    height: 16px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    border: 2px solid white;
+}
+
+/* 알림함 드롭다운 */
+.notification-dropdown {
+    position: absolute;
+    top: 60px;
+    right: 20px;
+    width: 380px;
+    max-height: 500px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    z-index: 1000;
+    display: none;
+    overflow: hidden;
+}
+.notification-dropdown.active {
+    display: flex;
+    flex-direction: column;
+}
+.notification-dropdown-header {
+    padding: 15px 20px;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+.notification-dropdown-header h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0;
+}
+.notification-dropdown-header button {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    cursor: pointer;
+}
+.notification-dropdown-header button:hover {
+    background: rgba(255,255,255,0.3);
+}
+.notification-list {
+    overflow-y: auto;
+    max-height: 400px;
+    flex: 1;
+}
+.notification-item {
+    padding: 14px 20px;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.notification-item:hover {
+    background: #f8f9fa;
+}
+.notification-item.unread {
+    background: #f0f4ff;
+    border-left: 3px solid #667eea;
+}
+.notification-item-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+}
+.notification-item-type {
+    font-size: 11px;
+    font-weight: 600;
+    color: #667eea;
+    padding: 2px 8px;
+    background: #f0f4ff;
+    border-radius: 10px;
+}
+.notification-item-time {
+    font-size: 11px;
+    color: #95a5a6;
+}
+.notification-item-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 4px;
+}
+.notification-item-content {
+    font-size: 12px;
+    color: #7f8c8d;
+    line-height: 1.4;
+}
+.notification-empty {
+    padding: 40px 20px;
+    text-align: center;
+    color: #95a5a6;
+    font-size: 13px;
+}
+
+/* 토스트 알림 (우측 상단) */
+.toast-container {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+}
+.toast {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    width: 320px;
+    overflow: hidden;
+    pointer-events: auto;
+    animation: slideIn 0.3s ease-out;
+    border-left: 4px solid #667eea;
+}
+.toast.fadeout {
+    animation: fadeOut 0.3s ease-out forwards;
+}
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+@keyframes fadeOut {
+    to { transform: translateX(100%); opacity: 0; }
+}
+.toast-header {
+    padding: 10px 14px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    font-weight: 600;
+}
+.toast-close {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0 4px;
+    opacity: 0.8;
+}
+.toast-close:hover {
+    opacity: 1;
+}
+.toast-body {
+    padding: 12px 14px;
+}
+.toast-body .recipient {
+    font-size: 11px;
+    color: #7f8c8d;
+    margin-bottom: 6px;
+}
+.toast-body .message {
+    font-size: 12px;
+    color: #2c3e50;
+    line-height: 1.5;
+    background: #f8f9fa;
+    padding: 8px 10px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    max-height: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.toast-actions {
+    display: flex;
+    gap: 6px;
+}
+.toast-actions button {
+    flex: 1;
+    padding: 5px 8px;
+    border: none;
+    border-radius: 5px;
+    font-size: 11px;
+    cursor: pointer;
+    font-weight: 600;
+}
+.toast-actions .btn-detail {
+    background: #667eea;
+    color: white;
+}
+.toast-actions .btn-dismiss {
+    background: #e0e0e0;
+    color: #2c3e50;
+}
+
+/* 알림 발송 미리보기 모달 */
+.notification-preview-box {
+    background: linear-gradient(135deg, #FEE500 0%, #F4D700 100%);
+    padding: 16px;
+    border-radius: 12px;
+    margin: 10px 0;
+    position: relative;
+}
+.notification-preview-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    font-size: 12px;
+    color: #3C1E1E;
+    font-weight: 600;
+}
+.notification-preview-content {
+    background: white;
+    padding: 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #2c3e50;
+    white-space: pre-line;
+}
+.notification-preview-footer {
+    text-align: center;
+    margin-top: 10px;
+    font-size: 11px;
+    color: #5C4D00;
+    background: rgba(255,255,255,0.6);
+    padding: 6px;
+    border-radius: 6px;
+}
+
+/* 시뮬레이션 모드 배너 */
+.simulation-banner {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffe69c 100%);
+    border-left: 4px solid #f39c12;
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 11px;
+    color: #856404;
+    margin: 8px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* 알림 설정 페이지 */
+.settings-section {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 15px;
+    border: 1px solid #e0e0e0;
+}
+.settings-section h3 {
+    font-size: 15px;
+    color: #2c3e50;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.settings-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+.settings-toggle:last-child {
+    border-bottom: none;
+}
+.settings-toggle-label {
+    font-size: 13px;
+    color: #2c3e50;
+}
+.settings-toggle-desc {
+    font-size: 11px;
+    color: #95a5a6;
+    margin-top: 2px;
+}
+
+/* 토글 스위치 */
+.switch {
+    position: relative;
+    width: 42px;
+    height: 22px;
+    flex-shrink: 0;
+}
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background: #ccc;
+    border-radius: 22px;
+    transition: 0.3s;
+}
+.slider:before {
+    content: "";
+    position: absolute;
+    height: 16px;
+    width: 16px;
+    left: 3px;
+    bottom: 3px;
+    background: white;
+    border-radius: 50%;
+    transition: 0.3s;
+}
+input:checked + .slider {
+    background: #667eea;
+}
+input:checked + .slider:before {
+    transform: translateX(20px);
+}
+
+/* 알림 이력 테이블 */
+.notification-log-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+.notification-log-table th {
+    background: #f8f9fa;
+    padding: 10px 8px;
+    text-align: left;
+    color: #7f8c8d;
+    font-weight: 600;
+    border-bottom: 2px solid #e0e0e0;
+}
+.notification-log-table td {
+    padding: 10px 8px;
+    border-bottom: 1px solid #f0f0f0;
+}
+.notification-log-table tr:hover td {
+    background: #f8f9fa;
+}
+.log-status {
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 600;
+}
+.log-status.simulation {
+    background: #fff3cd;
+    color: #856404;
+}
+.log-status.success {
+    background: #d4edda;
+    color: #155724;
+}
+
 .request-card.clickable::after {
     content: "🔍 클릭하여 상세 확인";
     position: absolute;
@@ -1129,64 +1510,68 @@ body {
     <div class="login-box">
         <div class="logo">⛪</div>
         <h1 class="login-title">교회 예산 관리 시스템</h1>
-        <p class="login-subtitle">v3.4 - 통합 매트릭스 뷰</p>
+        <p class="login-subtitle">v3.7 - 실제 예산 데이터 반영 (관리위·생도위)</p>
 
         <div id="loginForm">
             <div class="form-group">
                 <label>이메일</label>
-                <input type="email" id="loginEmail" placeholder="example@church.com">
+                <input type="email" id="loginEmail" placeholder="example@church.com" autocomplete="email">
             </div>
             <div class="form-group">
                 <label>비밀번호</label>
-                <input type="password" id="loginPassword" placeholder="비밀번호" onkeypress="if(event.key==='Enter') handleLogin()">
+                <div style="position:relative">
+                    <input type="password" id="loginPassword" placeholder="비밀번호" 
+                           onkeypress="if(event.key==='Enter') handleLogin()" 
+                           autocomplete="current-password" 
+                           style="padding-right:45px">
+                    <button type="button" onclick="togglePasswordVisibility('loginPassword', this)"
+                            style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;padding:4px;color:#7f8c8d">
+                        👁️
+                    </button>
+                </div>
             </div>
             <button class="btn btn-primary" onclick="handleLogin()">로그인</button>
-            <div class="link-button">
-                계정이 없으신가요? <a onclick="showRegister()">회원가입</a>
+            
+            <!-- v3.7: 카카오 로그인 버튼 (UI만, 추후 활성화) -->
+            <button class="btn-kakao" onclick="handleKakaoLogin()" 
+                    style="width:100%;background:#FEE500;color:#3C1E1E;border:none;padding:12px;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:8px">
+                <span>💬</span> 카카오로 로그인 (준비 중)
+            </button>
+            
+            <div style="text-align:center;margin-top:15px;font-size:12px;color:#7f8c8d">
+                <a onclick="showPolicyModal('terms')" style="color:#667eea;cursor:pointer;text-decoration:underline">이용약관</a>
+                · 
+                <a onclick="showPolicyModal('privacy')" style="color:#667eea;cursor:pointer;text-decoration:underline">개인정보 처리방침</a>
             </div>
 
             <div class="test-accounts">
                 <h4>🧪 테스트 계정 (비밀번호: 123456)</h4>
-                <p><strong>member@test.com</strong> - 부서원 (예배위원회)</p>
-                <p><strong>leader@test.com</strong> - 부서장 (예배위원회)</p>
+                <p style="font-size:11px;color:#27ae60;margin:4px 0"><strong>⭐ v3.7 정확 데이터:</strong></p>
+                <p><strong>manage_member@test.com</strong> - 관리위원회 부서원</p>
+                <p><strong>manage_leader@test.com</strong> - 관리위원회 부서장</p>
+                <p><strong>cadet_member@test.com</strong> - 생도위원회 부서원</p>
+                <p><strong>cadet_leader@test.com</strong> - 생도위원회 부서장</p>
+                <p style="font-size:11px;color:#7f8c8d;margin:4px 0">기존 계정:</p>
+                <p><strong>member@test.com</strong> - 예배위원회 부서원</p>
+                <p><strong>leader@test.com</strong> - 예배위원회 부서장</p>
                 <p><strong>finance@test.com</strong> - 재정 담당자</p>
                 <p><strong>chair@test.com</strong> - 재정위원장</p>
                 <p><strong>admin@test.com</strong> - 관리자</p>
             </div>
+            
+            <div style="background:#fff3cd;color:#856404;padding:10px;border-radius:8px;margin-top:15px;font-size:11px;border-left:3px solid #f39c12">
+                ℹ️ <strong>관리자 등록제:</strong> 회원가입은 관리자가 일괄 등록합니다. 계정이 필요하시면 관리자에게 문의하세요.
+            </div>
         </div>
+    </div>
+</div>
 
-        <div id="registerForm" class="hidden">
-            <div class="form-group">
-                <label>이름</label>
-                <input type="text" id="registerName" placeholder="홍길동">
-            </div>
-            <div class="form-group">
-                <label>이메일</label>
-                <input type="email" id="registerEmail" placeholder="example@church.com">
-            </div>
-            <div class="form-group">
-                <label>부서</label>
-                <select id="registerDepartment">
-                    <option value="">선택하세요</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>역할</label>
-                <select id="registerRole">
-                    <option value="member">부서원</option>
-                    <option value="leader">부서장</option>
-                    <option value="finance">재정 담당자</option>
-                    <option value="financeChair">재정위원장</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>비밀번호</label>
-                <input type="password" id="registerPassword" placeholder="최소 6자">
-            </div>
-            <button class="btn btn-primary" onclick="handleRegister()">회원가입</button>
-            <div class="link-button">
-                이미 계정이 있으신가요? <a onclick="showLogin()">로그인</a>
-            </div>
+<!-- v3.7: 약관/방침 모달 -->
+<div id="policyModal" class="modal">
+    <div class="modal-content" style="max-width:700px;max-height:80vh;overflow-y:auto">
+        <div id="policyModalContent"></div>
+        <div class="modal-actions">
+            <button class="btn btn-primary" onclick="closePolicyModal()">확인</button>
         </div>
     </div>
 </div>
@@ -1195,15 +1580,34 @@ body {
 <div id="mainApp" class="main-app">
     <div class="header">
         <div class="header-left">
-            <h1>⛪ 교회 예산 관리 시스템 <span style="font-size:14px;color:#667eea">v3.4</span></h1>
+            <h1>⛪ 교회 예산 관리 시스템 <span style="font-size:14px;color:#667eea">v3.7</span></h1>
             <p id="currentUserInfo"></p>
         </div>
         <div class="header-right">
             <span class="role-badge" id="roleBadge"></span>
             <span class="user-badge" id="userBadge"></span>
+            <!-- v3.5: 알림 벨 -->
+            <div class="notification-bell" onclick="toggleNotificationDropdown(event)" title="알림함">
+                🔔
+                <span class="notification-badge" id="notificationBadge" style="display:none">0</span>
+            </div>
             <button class="btn-logout" onclick="handleLogout()">로그아웃</button>
         </div>
     </div>
+    
+    <!-- v3.5: 알림함 드롭다운 -->
+    <div id="notificationDropdown" class="notification-dropdown">
+        <div class="notification-dropdown-header">
+            <h3>🔔 내 알림</h3>
+            <button onclick="markAllNotificationsRead()">모두 읽음</button>
+        </div>
+        <div class="notification-list" id="notificationList">
+            <!-- 동적 생성 -->
+        </div>
+    </div>
+    
+    <!-- v3.5: 토스트 컨테이너 -->
+    <div class="toast-container" id="toastContainer"></div>
 
     <div class="content">
 
@@ -1240,6 +1644,23 @@ body {
             <div class="menu-item" onclick="showReport()" data-view="report" id="menuReport">
                 <span class="menu-icon">📑</span>
                 <span>보고서 생성</span>
+            </div>
+            <div class="menu-item" onclick="showNotificationSettings()" data-view="notif-settings" id="menuNotifSettings">
+                <span class="menu-icon">⚙️</span>
+                <span>알림 설정</span>
+            </div>
+            <div class="menu-item" onclick="showNotificationLog()" data-view="notif-log" id="menuNotifLog">
+                <span class="menu-icon">📊</span>
+                <span>알림 이력</span>
+            </div>
+            <div style="border-top:1px solid #e0e0e0;margin:8px 0"></div>
+            <div class="menu-item" onclick="showMyPage()" data-view="my-page" id="menuMyPage">
+                <span class="menu-icon">👤</span>
+                <span>마이페이지</span>
+            </div>
+            <div class="menu-item" onclick="showUserManage()" data-view="user-manage" id="menuUserManage">
+                <span class="menu-icon">👥</span>
+                <span>사용자 관리</span>
             </div>
         </div>
 
@@ -1279,10 +1700,19 @@ body {
 
                 <form id="budgetRequestForm">
                     <div class="form-group">
-                        <label>예산 항목 * <span style="color:#e74c3c">(선택 시 잔액 자동 표시)</span></label>
-                        <select id="reqCategory" required onchange="updateBudgetStatus()">
+                        <label>예산 항목 (세목) * <span style="color:#e74c3c">(선택 시 잔액 자동 표시)</span></label>
+                        <select id="reqCategory" required onchange="updateBudgetStatus(); updateBusinessOptions();">
                             <option value="">선택하세요</option>
                         </select>
+                    </div>
+
+                    <!-- v3.7: 사업명 선택 (실제 예산 항목 기반) -->
+                    <div class="form-group" id="businessGroup" style="display:none">
+                        <label>사업명 (코드) <span style="color:#7f8c8d;font-size:11px">- 해당 부서의 등록된 사업 선택</span></label>
+                        <select id="reqBusinessCode" onchange="onBusinessSelect()">
+                            <option value="">직접 입력 (목록에 없는 사업)</option>
+                        </select>
+                        <div id="businessInfo" style="margin-top:8px;font-size:12px;color:#7f8c8d"></div>
                     </div>
 
                     <div id="budgetStatusDisplay"></div>
@@ -1464,6 +1894,270 @@ body {
                 <div id="reportPreview"></div>
             </div>
 
+            <!-- ===== v3.5: 알림 설정 ===== -->
+            <div id="notifSettingsView" class="hidden">
+                <div class="content-header">
+                    <div>
+                        <h2 class="content-title">⚙️ 알림 설정</h2>
+                        <p class="content-subtitle">받을 알림 종류와 연락처를 설정합니다</p>
+                    </div>
+                </div>
+
+                <div class="simulation-banner">
+                    ⚠️ <strong>시뮬레이션 모드:</strong> 현재 실제 알림은 발송되지 않습니다. 시범운영 후 실제 발송 시스템으로 전환 예정입니다.
+                </div>
+
+                <!-- 연락처 설정 -->
+                <div class="settings-section">
+                    <h3>📱 알림 받을 연락처</h3>
+                    
+                    <div class="form-group">
+                        <label>카카오톡 번호 (알림톡 수신용)</label>
+                        <input type="tel" id="notifKakaoPhone" placeholder="010-1234-5678" pattern="[0-9-]+">
+                        <small style="color:#95a5a6;font-size:11px">실제 도입 시 알림톡 수신에 사용됩니다</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>휴대폰 번호 (SMS 수신용)</label>
+                        <input type="tel" id="notifPhone" placeholder="010-1234-5678" pattern="[0-9-]+">
+                        <small style="color:#95a5a6;font-size:11px">알림톡 미수신 시 SMS로 발송됩니다</small>
+                    </div>
+                </div>
+
+                <!-- 알림 종류 설정 -->
+                <div class="settings-section">
+                    <h3>🔔 받을 알림 종류</h3>
+                    <div id="notifTypesList">
+                        <!-- 동적 생성 -->
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" style="width:auto;padding:12px 24px" onclick="saveNotificationSettings()">
+                    💾 설정 저장
+                </button>
+            </div>
+
+            <!-- ===== v3.5: 알림 이력 (관리자용) ===== -->
+            <div id="notifLogView" class="hidden">
+                <div class="content-header">
+                    <div>
+                        <h2 class="content-title">📊 알림 발송 이력</h2>
+                        <p class="content-subtitle" id="notifLogSubtitle">전체 발송 이력을 확인합니다</p>
+                    </div>
+                    <div style="display:flex;gap:8px">
+                        <button class="btn btn-warning" style="width:auto;padding:8px 14px;font-size:12px" onclick="clearAllNotifications()">
+                            🗑️ 이력 삭제
+                        </button>
+                    </div>
+                </div>
+
+                <div class="simulation-banner">
+                    ⚠️ <strong>시뮬레이션 모드:</strong> 표시된 알림은 시뮬레이션입니다. 실제 발송 시 비용은 카카오 알림톡 약 7~10원/건, SMS 약 20원/건입니다.
+                </div>
+
+                <!-- 통계 -->
+                <div class="stats-grid" id="notifLogStats"></div>
+
+                <!-- 이력 테이블 -->
+                <div style="background:white;border-radius:12px;padding:20px;border:1px solid #e0e0e0;overflow-x:auto">
+                    <h3 style="color:#2c3e50;margin-bottom:15px;font-size:15px">📋 발송 이력 (최근 100건)</h3>
+                    <div id="notifLogTable"></div>
+                </div>
+            </div>
+
+            <!-- ===== v3.7: 마이페이지 ===== -->
+            <div id="myPageView" class="hidden">
+                <div class="content-header">
+                    <div>
+                        <h2 class="content-title">👤 마이페이지</h2>
+                        <p class="content-subtitle">내 정보를 조회하고 수정합니다</p>
+                    </div>
+                </div>
+
+                <!-- 내 정보 -->
+                <div class="settings-section">
+                    <h3>📋 내 정보</h3>
+                    <div id="myInfoDisplay"></div>
+                </div>
+
+                <!-- 정보 수정 -->
+                <div class="settings-section">
+                    <h3>✏️ 정보 수정</h3>
+                    <div class="form-group">
+                        <label>이름</label>
+                        <input type="text" id="myName" placeholder="홍길동">
+                    </div>
+                    <div class="form-group">
+                        <label>휴대폰 번호</label>
+                        <input type="tel" id="myPhone" placeholder="010-1234-5678">
+                    </div>
+                    <div class="form-group">
+                        <label>카카오톡 번호</label>
+                        <input type="tel" id="myKakaoPhone" placeholder="010-1234-5678">
+                    </div>
+                    <div class="form-group">
+                        <label>직분</label>
+                        <input type="text" id="myPosition" placeholder="집사, 장로, 권사 등">
+                    </div>
+                    <button class="btn btn-primary" style="width:auto;padding:10px 20px" onclick="saveMyInfo()">
+                        💾 정보 저장
+                    </button>
+                </div>
+
+                <!-- 비밀번호 변경 -->
+                <div class="settings-section">
+                    <h3>🔐 비밀번호 변경</h3>
+                    <div class="form-group">
+                        <label>현재 비밀번호</label>
+                        <input type="password" id="currentPassword" placeholder="현재 비밀번호">
+                    </div>
+                    <div class="form-group">
+                        <label>새 비밀번호 (8자 이상, 영문+숫자)</label>
+                        <input type="password" id="newPassword" placeholder="새 비밀번호">
+                    </div>
+                    <div class="form-group">
+                        <label>새 비밀번호 확인</label>
+                        <input type="password" id="newPasswordConfirm" placeholder="새 비밀번호 다시 입력">
+                    </div>
+                    <button class="btn btn-warning" style="width:auto;padding:10px 20px" onclick="changeMyPassword()">
+                        🔑 비밀번호 변경
+                    </button>
+                </div>
+
+                <!-- 동의 내역 -->
+                <div class="settings-section">
+                    <h3>📜 동의 내역</h3>
+                    <div id="consentDisplay"></div>
+                    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+                        <button class="btn btn-secondary" style="width:auto;padding:8px 14px;font-size:12px" onclick="showPolicyModal('terms')">
+                            📜 이용약관 보기
+                        </button>
+                        <button class="btn btn-secondary" style="width:auto;padding:8px 14px;font-size:12px" onclick="showPolicyModal('privacy')">
+                            🔐 개인정보 처리방침 보기
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 회원 탈퇴 -->
+                <div class="settings-section" style="border-color:#e74c3c">
+                    <h3 style="color:#e74c3c">⚠️ 회원 탈퇴</h3>
+                    <p style="color:#7f8c8d;font-size:13px;margin-bottom:10px">
+                        회원 탈퇴 시 모든 개인정보가 삭제됩니다. 단, 회계 자료 보관을 위해 신청·승인 이력은 익명화되어 보관될 수 있습니다.
+                    </p>
+                    <button class="btn btn-danger" style="width:auto;padding:10px 20px" onclick="requestWithdraw()">
+                        🚫 회원 탈퇴
+                    </button>
+                </div>
+            </div>
+
+            <!-- ===== v3.7: 사용자 관리 (관리자 전용) ===== -->
+            <div id="userManageView" class="hidden">
+                <div class="content-header">
+                    <div>
+                        <h2 class="content-title">👥 사용자 관리</h2>
+                        <p class="content-subtitle">시범운영 사용자를 등록하고 관리합니다</p>
+                    </div>
+                    <button class="btn btn-primary" style="width:auto;padding:10px 20px" onclick="showAddUserModal()">
+                        ➕ 사용자 등록
+                    </button>
+                </div>
+
+                <!-- 통계 -->
+                <div class="stats-grid" id="userStats"></div>
+
+                <!-- 사용자 목록 -->
+                <div style="background:white;border-radius:12px;padding:20px;border:1px solid #e0e0e0;overflow-x:auto">
+                    <h3 style="color:#2c3e50;margin-bottom:15px;font-size:15px">📋 등록 사용자 목록</h3>
+                    <div id="userListTable"></div>
+                </div>
+            </div>
+
+            <!-- v3.7: 사용자 등록 모달 -->
+            <div id="addUserModal" class="modal">
+                <div class="modal-content" style="max-width:600px">
+                    <div class="modal-header">➕ 새 사용자 등록</div>
+                    <p style="color:#7f8c8d;margin-bottom:15px;font-size:13px">
+                        관리자가 사용자를 일괄 등록합니다. 임시 비밀번호가 자동 생성되며, 첫 로그인 시 변경하도록 안내됩니다.
+                    </p>
+                    
+                    <div class="form-group">
+                        <label>이름 *</label>
+                        <input type="text" id="newUserName" placeholder="홍길동">
+                    </div>
+                    <div class="form-group">
+                        <label>이메일 *</label>
+                        <input type="email" id="newUserEmail" placeholder="example@church.com">
+                    </div>
+                    <div class="form-group">
+                        <label>부서 *</label>
+                        <select id="newUserDepartment">
+                            <option value="">선택하세요</option>
+                            <optgroup label="⭐ v3.7 정확 반영 부서 (시범운영 권장)">
+                                <option value="manage">관리위원회</option>
+                                <option value="cadet">생도위원회</option>
+                                <option value="worship">예배위원회</option>
+                            </optgroup>
+                            <optgroup label="임시 부서 (실제 데이터 미반영)">
+                                <option value="education">교육위원회(임시)</option>
+                                <option value="mission">선교위원회(임시)</option>
+                                <option value="youth">청년위원회(임시)</option>
+                                <option value="praise">찬양위원회(임시)</option>
+                                <option value="service">봉사위원회(임시)</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>역할 *</label>
+                        <select id="newUserRole">
+                            <option value="member">부서원</option>
+                            <option value="leader">부서장</option>
+                            <option value="finance">재정 담당자</option>
+                            <option value="financeChair">재정위원장</option>
+                            <option value="admin">관리자</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>직분</label>
+                        <input type="text" id="newUserPosition" placeholder="집사, 장로, 권사 등">
+                    </div>
+                    <div class="form-group">
+                        <label>휴대폰 번호</label>
+                        <input type="tel" id="newUserPhone" placeholder="010-1234-5678">
+                    </div>
+                    <div class="form-group">
+                        <label>카카오톡 번호</label>
+                        <input type="tel" id="newUserKakao" placeholder="010-1234-5678 (휴대폰과 같으면 비워도 됨)">
+                    </div>
+                    
+                    <div style="background:#fff3cd;color:#856404;padding:10px;border-radius:8px;margin:10px 0;font-size:12px">
+                        💡 임시 비밀번호가 자동 생성되며, 등록 완료 후 표시됩니다. 사용자에게 카카오톡 등으로 안내해주세요.
+                    </div>
+                    
+                    <div class="modal-actions">
+                        <button class="btn btn-secondary" onclick="closeAddUserModal()">취소</button>
+                        <button class="btn btn-primary" onclick="addNewUser()">등록</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- v3.7: 임시 비밀번호 표시 모달 -->
+            <div id="tempPasswordModal" class="modal">
+                <div class="modal-content" style="max-width:500px">
+                    <div class="modal-header">✅ 사용자 등록 완료</div>
+                    <p style="color:#27ae60;margin-bottom:15px;font-size:14px">
+                        사용자가 성공적으로 등록되었습니다. 아래 정보를 사용자에게 안내해주세요.
+                    </p>
+                    <div id="tempPasswordInfo" style="background:#f0f4ff;padding:15px;border-radius:8px;font-family:monospace"></div>
+                    <div style="background:#fff3cd;color:#856404;padding:10px;border-radius:8px;margin:10px 0;font-size:12px">
+                        ⚠️ 이 임시 비밀번호는 다시 확인할 수 없습니다. 지금 안내해주세요!
+                    </div>
+                    <div class="modal-actions">
+                        <button class="btn btn-secondary" onclick="copyTempPassword()">📋 복사</button>
+                        <button class="btn btn-primary" onclick="closeTempPasswordModal()">확인</button>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 </div>
@@ -1579,36 +2273,151 @@ let viewingRequestId = null;  // v3: 상세 보기 중인 신청
 let editingRequestId = null;  // v3: 수정 중인 신청
 
 const STORAGE_KEYS = {
-    USERS: 'cb_v32_users',
-    REQUESTS: 'cb_v32_requests',
-    CURRENT_USER: 'cb_v32_current_user',
-    BUDGET_PLANS: 'cb_v32_budget_plans',
-    DEPARTMENTS: 'cb_v32_departments',
-    CATEGORIES: 'cb_v32_categories'
+    USERS: 'cb_v37_users',
+    REQUESTS: 'cb_v37_requests',
+    CURRENT_USER: 'cb_v37_current_user',
+    BUDGET_PLANS: 'cb_v37_budget_plans',
+    DEPARTMENTS: 'cb_v37_departments',
+    CATEGORIES: 'cb_v37_categories',
+    NOTIFICATIONS: 'cb_v37_notifications',
+    NOTIFICATION_SETTINGS: 'cb_v37_notif_settings',
+    CONSENTS: 'cb_v37_consents',                // v3.7: 동의 이력
+    LOGIN_ATTEMPTS: 'cb_v37_login_attempts',    // v3.7: 로그인 실패 추적
+    SESSION: 'cb_v37_session'                   // v3.7: 세션 관리
 };
+
+// v3.7: 약관 버전 (변경 시 재동의 필요)
+const POLICY_VERSION = '1.0';
+const SESSION_TIMEOUT_MIN = 60; // 60분 후 자동 로그아웃
 
 // ============================================
 // 마스터 데이터
 // ============================================
+// v3.7: 실제 육사교회 부서 구조 (관리위·생도위 우선 반영)
+// 다른 부서는 시범운영 후 별도 파일 입수 시 추가 예정
 const DEPARTMENTS = [
-    { id: 'worship', name: '예배위원회' },
-    { id: 'education', name: '교육위원회' },
-    { id: 'mission', name: '선교위원회' },
-    { id: 'youth', name: '청년위원회' },
-    { id: 'praise', name: '찬양위원회' },
-    { id: 'service', name: '봉사위원회' }
+    { id: 'worship', name: '예배위원회', code: '예' },           // v3.5 데이터 유지 (호환)
+    { id: 'manage', name: '관리위원회', code: '관', priority: true },     // ⭐ v3.7 신규 정확 반영
+    { id: 'cadet', name: '생도위원회', code: '생', priority: true },      // ⭐ v3.7 신규 정확 반영
+    // 시범운영 후 추가 예정 (별도 파일 입수 시):
+    // { id: 'operation', name: '운영위원회', code: '운' },
+    // { id: 'mission', name: '선교양육위원회', code: '선' },
+    // { id: 'edu_kid', name: '교육위(유치부)', code: '유' },
+    // { id: 'edu_elem', name: '교육위(초등부)', code: '초' },
+    // { id: 'edu_mid', name: '교육위(중고등부)', code: '중' },
+    // { id: 'edu_youth', name: '교육위(청년부)', code: '청' },
+    // { id: 'shinwoo', name: '신우위원회', code: '신' },
+    // { id: 'finance_committee', name: '재정위원회', code: '재' },  // ⚠️ 인건비 포함, 마스킹 필요
+    // { id: 'praise', name: '찬양위원회', code: '찬' },
+    // { id: 'condolence', name: '경조위원회', code: '경' },
+    // { id: 'audit', name: '감사위원회', code: '감' },
+    // { id: 'female', name: '여전도회총회', code: '여' },
+    // { id: 'male', name: '남선교회', code: '남' },
+    
+    // 임시 더미 부서 (시범운영용 호환)
+    { id: 'education', name: '교육위원회(임시)' },
+    { id: 'mission', name: '선교위원회(임시)' },
+    { id: 'youth', name: '청년위원회(임시)' },
+    { id: 'praise', name: '찬양위원회(임시)' },
+    { id: 'service', name: '봉사위원회(임시)' }
 ];
 
+// v3.7: 실제 교회에서 사용하는 카테고리 (10가지 → 시스템 8개로)
 const CATEGORIES = [
+    { id: 'fellowship', name: '친교비' },     // 가장 많이 사용
     { id: 'event', name: '행사비' },
-    { id: 'ministry', name: '사역비' },
-    { id: 'worship_supplies', name: '예배비' },
+    { id: 'manage_cost', name: '관리비' },    // v3.7 신규 (관리위)
+    { id: 'mission', name: '선교비' },        // v3.7 신규 (선교양육위, 생도위 등)
     { id: 'education', name: '교육비' },
-    { id: 'fellowship', name: '친교비' },
-    { id: 'supplies', name: '소모품비' },
-    { id: 'gift', name: '구제비' },
+    { id: 'worship_supplies', name: '예배비' },
+    { id: 'operation', name: '운영비' },      // v3.7 신규
     { id: 'other', name: '기타' }
 ];
+
+// v3.7: 실제 사업 마스터 데이터 (관리위·생도위)
+// 보안: 민감 정보(실명, 계좌, 인건비 상세)는 제외
+const BUDGET_ITEMS_MASTER = [
+    // ==================== 관리위원회 (관-01 ~ 관-07) ====================
+    { code: '관-01', dept: 'manage', category: 'fellowship', name: '단결활동',
+      amount: 78000, status: 'normal', note: '' },
+    { code: '관-02', dept: 'manage', category: 'manage_cost', name: '비품구입',
+      amount: 4180000, status: 'normal', note: '사업계획서 참고' },
+    { code: '관-03', dept: 'manage', category: 'manage_cost', name: '수리유지',
+      amount: 6790000, status: 'normal', note: '성탄트리 관리비용 1,000,000원/연 포함' },
+    { code: '관-04', dept: 'manage', category: 'manage_cost', name: '악기구입관리',
+      amount: 1800000, status: 'normal', note: '사업계획서 참고' },
+    { code: '관-05', dept: 'manage', category: 'manage_cost', name: '주방관리',
+      amount: 2700000, status: 'normal', note: '사업계획서 참고' },
+    { code: '관-06', dept: 'manage', category: 'manage_cost', name: '차량관리',
+      amount: 2940000, status: 'normal', note: '사업계획서 참고' },
+    { code: '관-07', dept: 'manage', category: 'manage_cost', name: '환경개선',
+      amount: 0, status: 'transferred', note: '장기수선충당금으로 전환' },
+
+    // ==================== 생도위원회 (생-01 ~ 생-24) ====================
+    { code: '생-01', dept: 'cadet', category: 'event', name: '졸업감사예배',
+      amount: 10000000, status: 'normal',
+      note: '파송선물 50,000원/명, 축하만찬 등' },
+    { code: '생-02', dept: 'cadet', category: 'event', name: '입학감사예배',
+      amount: 10000000, status: 'normal',
+      note: '축하선물·축하만찬' },
+    { code: '생-03', dept: 'cadet', category: 'education', name: '하계수련회',
+      amount: 0, status: 'converted', note: '전환 → 1학년수련회' },
+    { code: '생-04', dept: 'cadet', category: 'education', name: '동계수련회',
+      amount: 0, status: 'converted', note: '전환 → 임원생도수련회' },
+    { code: '생-05', dept: 'cadet', category: 'education', name: '기독교학술동아리',
+      amount: 600000, status: 'normal', note: '교재 15,000원/명×20명×2학기' },
+    { code: '생-06', dept: 'cadet', category: 'fellowship', name: '기독교학술동아리',
+      amount: 2500000, status: 'normal', note: '' },
+    { code: '생-07', dept: 'cadet', category: 'fellowship', name: '중대헌신예배',
+      amount: 0, status: 'converted', note: '전환 → 학년별헌신예배' },
+    { code: '생-08', dept: 'cadet', category: 'fellowship', name: '생도예배',
+      amount: 22100000, status: 'normal', note: '' },
+    { code: '생-09', dept: 'cadet', category: 'fellowship', name: '마라나타',
+      amount: 1715000, status: 'normal', note: '' },
+    { code: '생-10', dept: 'cadet', category: 'event', name: '달란트축제',
+      amount: 0, status: 'deleted', note: '삭제' },
+    { code: '생-11', dept: 'cadet', category: 'education', name: '교사세미나',
+      amount: 0, status: 'converted', note: '전환 → 생도섬김이워크샵' },
+    { code: '생-12', dept: 'cadet', category: 'fellowship', name: '교사세미나',
+      amount: 0, status: 'converted', note: '전환 → 생도섬김이워크샵' },
+    { code: '생-13', dept: 'cadet', category: 'education', name: '임원수련회',
+      amount: 0, status: 'converted', note: '전환 → 임원생도수련회' },
+    { code: '생-14', dept: 'cadet', category: 'fellowship', name: '임원수련회',
+      amount: 0, status: 'converted', note: '전환 → 임원생도수련회' },
+    { code: '생-15', dept: 'cadet', category: 'mission', name: '하기군사훈련',
+      amount: 6000000, status: 'normal',
+      note: '용품 및 간식 등 (1~3학년 2,000,000원/학년)' },
+    { code: '생-16', dept: 'cadet', category: 'mission', name: '전도활동비',
+      amount: 1600000, status: 'normal',
+      note: '100,000원/중대×8개중대×2회' },
+    { code: '생-17', dept: 'cadet', category: 'fellowship', name: '단결활동(섬김이)',
+      amount: 0, status: 'converted', note: '전환 → 생도섬김이워크샵' },
+    { code: '생-18', dept: 'cadet', category: 'operation', name: '부서운영',
+      amount: 200000, status: 'normal', note: '50,000원/분기' },
+    { code: '생-19', dept: 'cadet', category: 'fellowship', name: '1학년수련회',
+      amount: 2520000, status: 'converted', note: '전환 (하계수련회 → 1학년수련회)' },
+    { code: '생-20', dept: 'cadet', category: 'education', name: '1학년수련회',
+      amount: 600000, status: 'converted',
+      note: '준비비 300,000원×2회, 전환 (하계수련회 → 1학년수련회)' },
+    { code: '생-21', dept: 'cadet', category: 'fellowship', name: '임원생도수련회',
+      amount: 1800000, status: 'converted', note: '전환 (동계수련회 → 임원생도수련회)' },
+    { code: '생-22', dept: 'cadet', category: 'education', name: '임원생도수련회',
+      amount: 600000, status: 'converted',
+      note: '준비비 300,000원×2회, 전환' },
+    { code: '생-23', dept: 'cadet', category: 'fellowship', name: '학년별헌신예배',
+      amount: 10000000, status: 'new', note: '신규' },
+    { code: '생-24', dept: 'cadet', category: 'fellowship', name: '생도섬김이워크숍',
+      amount: 990000, status: 'new', note: '신규' }
+];
+
+// 사업 상태 정의
+const ITEM_STATUS = {
+    normal:      { label: '정상',  badge: '✓',  color: '#27ae60', bg: '#d4edda' },
+    new:         { label: '신규',  badge: '🆕', color: '#3498db', bg: '#d1ecf1' },
+    converted:   { label: '전환',  badge: '🔄', color: '#f39c12', bg: '#fff3cd' },
+    transferred: { label: '이관',  badge: '↗️', color: '#9b59b6', bg: '#e8d5f0' },
+    deleted:     { label: '삭제',  badge: '✗',  color: '#95a5a6', bg: '#e0e0e0' }
+};
 
 const ROLE_NAMES = {
     member: '부서원',
@@ -1688,75 +2497,117 @@ function initApp() {
 
 function initSampleData() {
     // 사용자
+    // v3.7: 비밀번호는 SHA-256 해싱됨 (원본 비번: 123456)
+    // 모든 테스트 계정 동일: hashPassword('123456') 결과
+    const HASHED_DEFAULT = 'e3756520cb43b5865bc2b54290c37411d3cc3bf93e128eee15bb88db695020c7';
+    
     const sampleUsers = [
-        { id: 'u1', name: '홍길동', email: 'member@test.com', password: '123456',
-          department: 'worship', role: 'member' },
-        { id: 'u2', name: '김부장', email: 'leader@test.com', password: '123456',
-          department: 'worship', role: 'leader' },
-        { id: 'u3', name: '이재정', email: 'finance@test.com', password: '123456',
-          department: 'service', role: 'finance' },
-        { id: 'u4', name: '박위원장', email: 'chair@test.com', password: '123456',
-          department: 'service', role: 'financeChair' },
-        { id: 'u5', name: '관리자', email: 'admin@test.com', password: '123456',
-          department: 'service', role: 'admin' }
+        // 예배위원회 (v3.5 데이터 호환 유지)
+        { id: 'u1', name: '홍길동', email: 'member@test.com', passwordHash: HASHED_DEFAULT,
+          department: 'worship', role: 'member',
+          phone: '010-1111-2222', kakaoPhone: '010-1111-2222',
+          position: '집사', joinDate: '2026-04-01', firstLogin: false,
+          createdBy: 'admin', isActive: true },
+        { id: 'u2', name: '김부장', email: 'leader@test.com', passwordHash: HASHED_DEFAULT,
+          department: 'worship', role: 'leader',
+          phone: '010-2222-3333', kakaoPhone: '010-2222-3333',
+          position: '장로', joinDate: '2026-04-01', firstLogin: false,
+          createdBy: 'admin', isActive: true },
+        { id: 'u3', name: '이재정', email: 'finance@test.com', passwordHash: HASHED_DEFAULT,
+          department: 'service', role: 'finance',
+          phone: '010-3333-4444', kakaoPhone: '010-3333-4444',
+          position: '권사', joinDate: '2026-04-01', firstLogin: false,
+          createdBy: 'admin', isActive: true },
+        { id: 'u4', name: '박위원장', email: 'chair@test.com', passwordHash: HASHED_DEFAULT,
+          department: 'service', role: 'financeChair',
+          phone: '010-4444-5555', kakaoPhone: '010-4444-5555',
+          position: '장로', joinDate: '2026-04-01', firstLogin: false,
+          createdBy: 'admin', isActive: true },
+        { id: 'u5', name: '관리자', email: 'admin@test.com', passwordHash: HASHED_DEFAULT,
+          department: 'service', role: 'admin',
+          phone: '010-5555-6666', kakaoPhone: '010-5555-6666',
+          position: '시스템 관리자', joinDate: '2026-04-01', firstLogin: false,
+          createdBy: 'system', isActive: true },
+        // v3.7: 관리위원회 테스트 계정
+        { id: 'u6', name: '관리부원', email: 'manage_member@test.com', passwordHash: HASHED_DEFAULT,
+          department: 'manage', role: 'member',
+          phone: '010-6666-1111', kakaoPhone: '010-6666-1111',
+          position: '집사', joinDate: '2026-04-01', firstLogin: false,
+          createdBy: 'admin', isActive: true },
+        { id: 'u7', name: '관리부장', email: 'manage_leader@test.com', passwordHash: HASHED_DEFAULT,
+          department: 'manage', role: 'leader',
+          phone: '010-6666-2222', kakaoPhone: '010-6666-2222',
+          position: '장로', joinDate: '2026-04-01', firstLogin: false,
+          createdBy: 'admin', isActive: true },
+        // v3.7: 생도위원회 테스트 계정
+        { id: 'u8', name: '생도부원', email: 'cadet_member@test.com', passwordHash: HASHED_DEFAULT,
+          department: 'cadet', role: 'member',
+          phone: '010-7777-1111', kakaoPhone: '010-7777-1111',
+          position: '집사', joinDate: '2026-04-01', firstLogin: false,
+          createdBy: 'admin', isActive: true },
+        { id: 'u9', name: '생도부장', email: 'cadet_leader@test.com', passwordHash: HASHED_DEFAULT,
+          department: 'cadet', role: 'leader',
+          phone: '010-7777-2222', kakaoPhone: '010-7777-2222',
+          position: '장로', joinDate: '2026-04-01', firstLogin: false,
+          createdBy: 'admin', isActive: true }
     ];
 
     // 2026년 예산 계획 (실제 데이터 기반)
     const currentYear = new Date().getFullYear();
     const samplePlans = [];
     
-    // 예배위원회 - 실제 데이터 기반 (총 24,030,000원)
+    // ============================================
+    // v3.7: 부서×카테고리별 예산 계획
+    // ============================================
+    
+    // [관리위원회] - 실제 데이터 100% 정확 (총 18,488,000원)
+    const managePlan = {
+        fellowship: 78000,        // 단결활동
+        manage_cost: 18410000,    // 비품·수리·악기·주방·차량·환경
+        event: 0, mission: 0, education: 0,
+        worship_supplies: 0, operation: 0, other: 0
+    };
+    
+    // [생도위원회] - 실제 데이터 100% 정확 (총 71,225,000원)
+    const cadetPlan = {
+        fellowship: 41625000,     // 생도예배·마라나타·헌신예배 등
+        event: 20000000,          // 졸업·입학감사예배
+        mission: 7600000,         // 하기군사훈련·전도활동
+        education: 1800000,       // 학술동아리·수련회
+        operation: 200000,        // 부서운영
+        manage_cost: 0, worship_supplies: 0, other: 0
+    };
+    
+    // [예배위원회] - v3.5 데이터 호환 (총 24,030,000원)
+    const worshipPlan = {
+        education: 11500000,
+        worship_supplies: 8330000,
+        event: 2900000,
+        fellowship: 1300000,
+        manage_cost: 0, mission: 0, operation: 0, other: 0
+    };
+    
+    // [임시 더미 부서들] - 시범운영 후 실제 데이터로 교체 예정
+    const dummyPlan = (total) => ({
+        fellowship: Math.floor(total * 0.3),
+        event: Math.floor(total * 0.25),
+        education: Math.floor(total * 0.2),
+        mission: Math.floor(total * 0.15),
+        operation: Math.floor(total * 0.05),
+        worship_supplies: Math.floor(total * 0.05),
+        manage_cost: 0, other: 0
+    });
+    
     const planTemplate = {
-        worship: {
-            education: 11500000,        // 교육비 (일반강사 800만, 부흥회 350만)
-            worship_supplies: 8330000,  // 예배비 (강단미화 648만, 미디어 120만, 등)
-            event: 2900000,             // 행사비 (성찬식, 세례식, 어버이주일 등)
-            fellowship: 1300000,        // 친교비 (환영환송, 새신자행사)
-            ministry: 0, supplies: 0, gift: 0, other: 0
-        },
-        education: {
-            education: 15000000,
-            event: 8000000,
-            ministry: 5000000,
-            supplies: 3000000,
-            other: 2000000,
-            worship_supplies: 0, gift: 0, fellowship: 1000000
-        },
-        mission: {
-            ministry: 18000000,
-            event: 10000000,
-            gift: 5000000,
-            education: 3000000,
-            other: 2000000,
-            worship_supplies: 0, supplies: 0, fellowship: 0
-        },
-        youth: {
-            event: 12000000,
-            ministry: 6000000,
-            fellowship: 3000000,
-            education: 4000000,
-            supplies: 2000000,
-            other: 1000000,
-            worship_supplies: 0, gift: 0
-        },
-        praise: {
-            worship_supplies: 8000000,
-            event: 5000000,
-            education: 3000000,
-            supplies: 4000000,
-            ministry: 2000000,
-            other: 1000000,
-            gift: 0, fellowship: 0
-        },
-        service: {
-            gift: 15000000,
-            ministry: 8000000,
-            fellowship: 5000000,
-            event: 3000000,
-            supplies: 2000000,
-            other: 2000000,
-            worship_supplies: 0, education: 1000000
-        }
+        manage: managePlan,
+        cadet: cadetPlan,
+        worship: worshipPlan,
+        // 임시 데이터 (시범운영 시에는 사용 권장 X, 실제 운영 시 별도 부서 파일로 교체)
+        education: dummyPlan(35000000),
+        mission: dummyPlan(40000000),
+        youth: dummyPlan(28000000),
+        praise: dummyPlan(15000000),
+        service: dummyPlan(20000000)
     };
 
     Object.keys(planTemplate).forEach(deptId => {
@@ -2077,7 +2928,7 @@ function showLogin() {
     document.getElementById('loginForm').classList.remove('hidden');
 }
 
-function handleLogin() {
+async function handleLogin() {
     const email = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value;
 
@@ -2086,17 +2937,86 @@ function handleLogin() {
         return;
     }
 
-    const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '[]');
-    const user = users.find(u => u.email === email && u.password === password);
-
-    if (user) {
-        currentUser = user;
-        localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
-        showMainApp();
-        showNotification(`환영합니다, ${user.name}님!`, 'success');
-    } else {
-        showNotification('이메일 또는 비밀번호가 올바르지 않습니다.', 'error');
+    // v3.7: 계정 잠금 체크
+    if (isAccountLocked(email)) {
+        const attempts = JSON.parse(localStorage.getItem(STORAGE_KEYS.LOGIN_ATTEMPTS) || '{}');
+        const unlockTime = new Date(attempts[email].lockedUntil);
+        const minutesLeft = Math.ceil((unlockTime - new Date()) / 60000);
+        showNotification(`계정이 잠겼습니다. ${minutesLeft}분 후 다시 시도하세요.`, 'error');
+        return;
     }
+
+    const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '[]');
+    const user = users.find(u => u.email === email);
+    
+    if (!user) {
+        trackLoginAttempt(email, false);
+        showNotification('이메일 또는 비밀번호가 올바르지 않습니다.', 'error');
+        return;
+    }
+    
+    // v3.7: 비활성화된 계정 체크
+    if (user.isActive === false) {
+        showNotification('비활성화된 계정입니다. 관리자에게 문의하세요.', 'error');
+        return;
+    }
+    
+    // v3.7: 비밀번호 검증 (해싱)
+    let isPasswordValid = false;
+    if (user.passwordHash) {
+        isPasswordValid = await verifyPassword(password, user.passwordHash);
+    } else if (user.password) {
+        // 구버전 호환 (평문 비밀번호)
+        isPasswordValid = (user.password === password);
+        if (isPasswordValid) {
+            // 자동 마이그레이션: 평문을 해시로 변환
+            user.passwordHash = await hashPassword(password);
+            delete user.password;
+            const userIdx = users.findIndex(u => u.id === user.id);
+            users[userIdx] = user;
+            localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+        }
+    }
+    
+    if (!isPasswordValid) {
+        const attempt = trackLoginAttempt(email, false);
+        const remainingAttempts = 5 - attempt.count;
+        if (remainingAttempts > 0) {
+            showNotification(`비밀번호가 올바르지 않습니다. (남은 시도: ${remainingAttempts}회)`, 'error');
+        } else {
+            showNotification('5회 연속 실패로 계정이 10분간 잠겼습니다.', 'error');
+        }
+        return;
+    }
+    
+    // v3.7: 로그인 성공
+    trackLoginAttempt(email, true);
+    
+    // 마지막 로그인 시각 기록
+    user.lastLoginAt = new Date().toISOString();
+    const userIdx = users.findIndex(u => u.id === user.id);
+    users[userIdx] = user;
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+    
+    currentUser = user;
+    localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
+    
+    // v3.7: 세션 생성
+    createSession(user.id);
+    
+    // v3.7: 첫 로그인 시 비밀번호 변경 안내
+    if (user.firstLogin) {
+        showMainApp();
+        setTimeout(() => {
+            if (confirm('첫 로그인입니다. 보안을 위해 비밀번호를 변경하시겠습니까?')) {
+                showMyPage();
+            }
+        }, 500);
+    } else {
+        showMainApp();
+    }
+    
+    showNotification(`환영합니다, ${user.name}님!`, 'success');
 }
 
 function handleRegister() {
@@ -2140,7 +3060,7 @@ function handleRegister() {
 function handleLogout() {
     if (!confirm('로그아웃 하시겠습니까?')) return;
     currentUser = null;
-    localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+    clearSession();  // v3.7: 세션 정리
     document.getElementById('loginScreen').style.display = 'flex';
     document.getElementById('mainApp').style.display = 'none';
     showNotification('로그아웃되었습니다.', 'success');
@@ -2191,7 +3111,43 @@ function showMainApp() {
     // 새 예산 신청: 모두 가능 (관리자 제외 옵션)
     newRequestMenu.style.display = 'flex';
 
+    // v3.5: 알림 메뉴 권한 처리
+    const notifSettingsMenu = document.getElementById('menuNotifSettings');
+    const notifLogMenu = document.getElementById('menuNotifLog');
+    
+    // 알림 설정: 모든 사용자
+    if (notifSettingsMenu) notifSettingsMenu.style.display = 'flex';
+    
+    // 알림 이력: 재정담당자, 재정위원장, 관리자만
+    if (notifLogMenu) {
+        if (['finance', 'financeChair', 'admin'].includes(currentUser.role)) {
+            notifLogMenu.style.display = 'flex';
+        } else {
+            notifLogMenu.style.display = 'none';
+        }
+    }
+
+    // v3.7: 마이페이지/사용자 관리 메뉴 권한
+    const myPageMenu = document.getElementById('menuMyPage');
+    const userManageMenu = document.getElementById('menuUserManage');
+    
+    // 마이페이지: 모든 사용자
+    if (myPageMenu) myPageMenu.style.display = 'flex';
+    
+    // 사용자 관리: 관리자만
+    if (userManageMenu) {
+        if (currentUser.role === 'admin') {
+            userManageMenu.style.display = 'flex';
+        } else {
+            userManageMenu.style.display = 'none';
+        }
+    }
+
     renderSidebarBudget();
+    
+    // v3.5: 알림 배지 초기 갱신
+    updateNotificationBadge();
+    
     showDashboard();
 }
 
@@ -2238,8 +3194,11 @@ function renderSidebarBudget() {
 // 뷰 전환
 // ============================================
 function switchView(viewId) {
-    ['dashboardView','newRequestView','requestsView','approvalView','budgetStatusView','budgetPlanView','reportView']
-        .forEach(id => document.getElementById(id).classList.add('hidden'));
+    ['dashboardView','newRequestView','requestsView','approvalView','budgetStatusView','budgetPlanView','reportView','notifSettingsView','notifLogView','myPageView','userManageView']
+        .forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.classList.add('hidden');
+        });
     document.getElementById(viewId).classList.remove('hidden');
     document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
 }
@@ -2256,6 +3215,11 @@ function showNewRequest() {
     document.getElementById('budgetRequestForm').reset();
     document.getElementById('budgetStatusDisplay').innerHTML = '';
     document.getElementById('amountWarning').innerHTML = '';
+    // v3.7: 사업 선택 초기화
+    const businessGroup = document.getElementById('businessGroup');
+    const businessInfo = document.getElementById('businessInfo');
+    if (businessGroup) businessGroup.style.display = 'none';
+    if (businessInfo) businessInfo.innerHTML = '';
 }
 
 function showRequests(resetViewMode = true) {
@@ -2611,6 +3575,119 @@ function updateBudgetStatus() {
     checkBudgetLimit();
 }
 
+// ============================================
+// v3.7: 사업명 선택 (실제 예산 마스터 기반)
+// ============================================
+function updateBusinessOptions() {
+    const categoryId = document.getElementById('reqCategory').value;
+    const businessGroup = document.getElementById('businessGroup');
+    const businessSelect = document.getElementById('reqBusinessCode');
+    const businessInfo = document.getElementById('businessInfo');
+    
+    if (!categoryId || !currentUser) {
+        businessGroup.style.display = 'none';
+        return;
+    }
+    
+    // 현재 사용자의 부서 + 선택한 카테고리에 해당하는 사업 마스터 조회
+    const matchingItems = BUDGET_ITEMS_MASTER.filter(item =>
+        item.dept === currentUser.department &&
+        item.category === categoryId &&
+        item.amount > 0  // 0원 항목(삭제/이관)은 제외
+    );
+    
+    if (matchingItems.length === 0) {
+        businessGroup.style.display = 'none';
+        businessSelect.innerHTML = '<option value="">직접 입력</option>';
+        return;
+    }
+    
+    // 드롭다운 표시
+    businessGroup.style.display = 'block';
+    
+    let html = '<option value="">-- 사업을 선택하거나 직접 입력 --</option>';
+    matchingItems.forEach(item => {
+        // 잔액 계산
+        const used = calculateUsedForItem(item.code);
+        const remaining = item.amount - used;
+        const remainingClass = remaining <= 0 ? '⚠️' : '';
+        
+        html += `<option value="${item.code}" 
+                  data-amount="${item.amount}" 
+                  data-name="${item.name}"
+                  data-note="${item.note || ''}"
+                  data-status="${item.status}">
+            ${item.code} ${item.name} (예산 ${formatMoney(item.amount)} ${remainingClass})
+        </option>`;
+    });
+    
+    businessSelect.innerHTML = html;
+    businessInfo.innerHTML = '';
+}
+
+function calculateUsedForItem(code) {
+    // 해당 사업 코드로 신청된 금액 합계 (승인 + 검토 중)
+    const requests = JSON.parse(localStorage.getItem(STORAGE_KEYS.REQUESTS) || '[]');
+    const used = requests
+        .filter(r => r.businessCode === code && (r.status === 'approved' || r.status === 'pending' || r.status === 'pending-finance'))
+        .reduce((sum, r) => sum + (r.amount || 0), 0);
+    return used;
+}
+
+function onBusinessSelect() {
+    const select = document.getElementById('reqBusinessCode');
+    const selected = select.options[select.selectedIndex];
+    const businessInfo = document.getElementById('businessInfo');
+    const purposeField = document.getElementById('reqPurpose');
+    
+    if (!select.value) {
+        businessInfo.innerHTML = '';
+        return;
+    }
+    
+    const code = select.value;
+    const name = selected.dataset.name;
+    const amount = parseInt(selected.dataset.amount);
+    const note = selected.dataset.note;
+    const status = selected.dataset.status;
+    
+    const used = calculateUsedForItem(code);
+    const remaining = amount - used;
+    
+    // 상태 배지
+    const statusInfo = ITEM_STATUS[status] || ITEM_STATUS.normal;
+    const statusBadge = `<span style="display:inline-block;padding:2px 8px;background:${statusInfo.bg};color:${statusInfo.color};border-radius:10px;font-size:11px;font-weight:600;margin-left:5px">${statusInfo.badge} ${statusInfo.label}</span>`;
+    
+    let infoHtml = `
+        <div style="background:#f0f4ff;padding:10px;border-radius:8px;border-left:3px solid #667eea">
+            <div style="font-weight:600;color:#2c3e50;margin-bottom:5px">
+                ${code} - ${name} ${statusBadge}
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;font-size:12px;margin-bottom:5px">
+                <div><span style="color:#7f8c8d">연간 계획:</span> <strong>${formatMoney(amount)}</strong></div>
+                <div><span style="color:#7f8c8d">이미 사용:</span> <strong style="color:#e67e22">${formatMoney(used)}</strong></div>
+                <div><span style="color:#7f8c8d">잔액:</span> <strong style="color:${remaining > 0 ? '#27ae60' : '#e74c3c'}">${formatMoney(remaining)}</strong></div>
+            </div>
+    `;
+    
+    if (note) {
+        infoHtml += `<div style="font-size:11px;color:#7f8c8d;margin-top:5px">📝 ${note}</div>`;
+    }
+    
+    if (status === 'deleted' || status === 'transferred') {
+        infoHtml += `<div style="color:#e74c3c;font-size:12px;margin-top:5px">⚠️ 이 항목은 ${statusInfo.label} 처리되어 신청이 어려울 수 있습니다.</div>`;
+    }
+    
+    infoHtml += `</div>`;
+    businessInfo.innerHTML = infoHtml;
+    
+    // 사용 목적 자동 채우기 (사업명을 기본 안내로)
+    if (!purposeField.value.trim()) {
+        purposeField.placeholder = `${name} 관련 사용 목적을 구체적으로 입력하세요\n예) ${name} - 세부 내용`;
+    }
+}
+
+
 function checkBudgetLimit() {
     const categoryId = document.getElementById('reqCategory').value;
     const amount = parseInt(document.getElementById('reqAmount').value) || 0;
@@ -2653,6 +3730,14 @@ document.getElementById('budgetRequestForm').addEventListener('submit', function
     const amount = parseInt(document.getElementById('reqAmount').value);
     const purpose = document.getElementById('reqPurpose').value.trim();
     const usageDate = document.getElementById('reqUsageDate').value;
+    
+    // v3.7: 사업 코드 (선택 사항)
+    const businessCodeEl = document.getElementById('reqBusinessCode');
+    const businessCode = businessCodeEl ? businessCodeEl.value : '';
+    let businessName = '';
+    if (businessCode && businessCodeEl.selectedIndex > 0) {
+        businessName = businessCodeEl.options[businessCodeEl.selectedIndex].dataset.name || '';
+    }
 
     if (!category || !amount || !purpose || !usageDate) {
         showNotification('모든 필드를 입력하세요.', 'error');
@@ -2672,6 +3757,8 @@ document.getElementById('budgetRequestForm').addEventListener('submit', function
         id: 'r' + Date.now(),
         department: currentUser.department,
         category, amount, purpose, usageDate,
+        businessCode: businessCode || null,    // v3.7: 사업 코드
+        businessName: businessName || null,    // v3.7: 사업명
         requestedBy: currentUser.id,
         requestedByName: currentUser.name,
         requestDate: new Date().toISOString(),
@@ -2685,11 +3772,25 @@ document.getElementById('budgetRequestForm').addEventListener('submit', function
             by: currentUser.name,
             byId: currentUser.id,
             date: new Date().toISOString(),
-            details: '신청 생성'
+            details: businessCode ? `신청 생성 (${businessCode} ${businessName})` : '신청 생성'
         }]
     };
     requests.unshift(newRequest);
     localStorage.setItem(STORAGE_KEYS.REQUESTS, JSON.stringify(requests));
+
+    // v3.5: 부서장에게 알림 발송 (시뮬레이션)
+    const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '[]');
+    const deptLeaders = users.filter(u => u.role === 'leader' && u.department === currentUser.department);
+    deptLeaders.forEach(leader => {
+        sendNotification('request_created', leader.id, {
+            requestId: newRequest.id,
+            department: newRequest.department,
+            category: newRequest.category,
+            amount: newRequest.amount,
+            usageDate: newRequest.usageDate,
+            requesterName: currentUser.name
+        });
+    });
 
     showNotification('예산 신청이 부서장에게 전달되었습니다!', 'success');
     renderSidebarBudget();
@@ -3008,6 +4109,8 @@ function approveRequest(id) {
     // v3: history 필드 초기화 (기존 데이터 호환)
     if (!request.history) request.history = [];
 
+    const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '[]');
+
     if (currentUser.role === 'leader') {
         request.status = 'pending-finance';
         request.leaderApproval = {
@@ -3021,6 +4124,19 @@ function approveRequest(id) {
             date: new Date().toISOString(),
             details: '부서장 승인 (재정 부서로 전달)'
         });
+        
+        // v3.5: 재정담당자에게 알림
+        const financeUsers = users.filter(u => u.role === 'finance');
+        financeUsers.forEach(fu => {
+            sendNotification('leader_approved', fu.id, {
+                requestId: request.id,
+                department: request.department,
+                category: request.category,
+                amount: request.amount,
+                requesterName: request.requestedByName
+            });
+        });
+        
         showNotification('승인 완료! 재정 부서로 전달되었습니다.', 'success');
     } else if (currentUser.role === 'finance' || currentUser.role === 'financeChair') {
         request.status = 'approved';
@@ -3035,6 +4151,16 @@ function approveRequest(id) {
             date: new Date().toISOString(),
             details: '재정 최종 승인'
         });
+        
+        // v3.5: 신청자에게 알림
+        sendNotification('final_approved', request.requestedBy, {
+            requestId: request.id,
+            department: request.department,
+            category: request.category,
+            amount: request.amount,
+            usageDate: request.usageDate
+        });
+        
         showNotification('최종 승인되었습니다!', 'success');
     }
 
@@ -3083,6 +4209,16 @@ function confirmReject() {
             details: `반려: ${reason}`
         });
         localStorage.setItem(STORAGE_KEYS.REQUESTS, JSON.stringify(requests));
+        
+        // v3.5: 신청자에게 반려 알림
+        sendNotification('rejected', request.requestedBy, {
+            requestId: request.id,
+            department: request.department,
+            category: request.category,
+            amount: request.amount,
+            reason: reason
+        });
+        
         showNotification('신청이 반려되었습니다.', 'success');
         
         // v3: 상세 모달 갱신
@@ -4955,8 +6091,1352 @@ function downloadReportExcel() {
 }
 
 // ============================================
-// 앱 시작!
+// v3.7: 보안 강화 (비밀번호 해싱, 세션 관리)
 // ============================================
+
+// SHA-256 해싱 (간단한 보안 강화)
+async function hashPassword(password) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password + 'church_budget_salt_v36');
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// 비밀번호 검증
+async function verifyPassword(password, hashedPassword) {
+    const hash = await hashPassword(password);
+    return hash === hashedPassword;
+}
+
+// 비밀번호 정책 검증
+function validatePassword(password) {
+    const errors = [];
+    if (password.length < 8) errors.push('8자 이상이어야 합니다');
+    if (!/[a-zA-Z]/.test(password)) errors.push('영문이 포함되어야 합니다');
+    if (!/[0-9]/.test(password)) errors.push('숫자가 포함되어야 합니다');
+    return { valid: errors.length === 0, errors };
+}
+
+// 임시 비밀번호 생성
+function generateTempPassword() {
+    const chars = 'abcdefghijkmnpqrstuvwxyz23456789';
+    let password = '';
+    for (let i = 0; i < 8; i++) {
+        password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password + Math.floor(Math.random() * 100); // 숫자 추가
+}
+
+// 로그인 시도 추적
+function trackLoginAttempt(email, success) {
+    const attempts = JSON.parse(localStorage.getItem(STORAGE_KEYS.LOGIN_ATTEMPTS) || '{}');
+    if (!attempts[email]) {
+        attempts[email] = { count: 0, lastAttempt: null, lockedUntil: null };
+    }
+    
+    if (success) {
+        attempts[email] = { count: 0, lastAttempt: new Date().toISOString(), lockedUntil: null };
+    } else {
+        attempts[email].count = (attempts[email].count || 0) + 1;
+        attempts[email].lastAttempt = new Date().toISOString();
+        if (attempts[email].count >= 5) {
+            // 10분 잠금
+            const unlockTime = new Date();
+            unlockTime.setMinutes(unlockTime.getMinutes() + 10);
+            attempts[email].lockedUntil = unlockTime.toISOString();
+        }
+    }
+    
+    localStorage.setItem(STORAGE_KEYS.LOGIN_ATTEMPTS, JSON.stringify(attempts));
+    return attempts[email];
+}
+
+function isAccountLocked(email) {
+    const attempts = JSON.parse(localStorage.getItem(STORAGE_KEYS.LOGIN_ATTEMPTS) || '{}');
+    if (!attempts[email] || !attempts[email].lockedUntil) return false;
+    return new Date(attempts[email].lockedUntil) > new Date();
+}
+
+// 세션 관리
+function createSession(userId) {
+    const session = {
+        userId: userId,
+        startedAt: new Date().toISOString(),
+        lastActivity: new Date().toISOString()
+    };
+    localStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify(session));
+    return session;
+}
+
+function updateSessionActivity() {
+    const session = JSON.parse(localStorage.getItem(STORAGE_KEYS.SESSION) || 'null');
+    if (session) {
+        session.lastActivity = new Date().toISOString();
+        localStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify(session));
+    }
+}
+
+function isSessionExpired() {
+    const session = JSON.parse(localStorage.getItem(STORAGE_KEYS.SESSION) || 'null');
+    if (!session) return true;
+    
+    const lastActivity = new Date(session.lastActivity);
+    const now = new Date();
+    const diffMin = (now - lastActivity) / 1000 / 60;
+    
+    return diffMin > SESSION_TIMEOUT_MIN;
+}
+
+function clearSession() {
+    localStorage.removeItem(STORAGE_KEYS.SESSION);
+    localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+}
+
+// 동의 정보 저장
+function saveConsent(userId, consents) {
+    const all = JSON.parse(localStorage.getItem(STORAGE_KEYS.CONSENTS) || '{}');
+    all[userId] = {
+        ...consents,
+        version: POLICY_VERSION,
+        consentedAt: new Date().toISOString(),
+        ip: 'simulation' // 실제 운영 시 IP 기록
+    };
+    localStorage.setItem(STORAGE_KEYS.CONSENTS, JSON.stringify(all));
+}
+
+function getConsent(userId) {
+    const all = JSON.parse(localStorage.getItem(STORAGE_KEYS.CONSENTS) || '{}');
+    return all[userId] || null;
+}
+
+// ============================================
+// v3.7: 약관/개인정보 처리방침 모달
+// ============================================
+function showPolicyModal(type) {
+    const modal = document.getElementById('policyModal');
+    const content = document.getElementById('policyModalContent');
+    
+    if (type === 'terms') {
+        content.innerHTML = getTermsHTML();
+    } else if (type === 'privacy') {
+        content.innerHTML = getPrivacyHTML();
+    } else if (type === 'notification') {
+        content.innerHTML = getNotificationConsentHTML();
+    }
+    
+    modal.classList.add('active');
+}
+
+function closePolicyModal() {
+    document.getElementById('policyModal').classList.remove('active');
+}
+
+function getTermsHTML() {
+    return `
+        <h2 style="color:#2c3e50;margin-bottom:15px">📜 서비스 이용약관</h2>
+        <div style="font-size:13px;line-height:1.8;color:#2c3e50;max-height:60vh;overflow-y:auto;padding-right:10px">
+            <p style="color:#7f8c8d;margin-bottom:15px">시행일: 2026년 4월 1일 / 버전: ${POLICY_VERSION}</p>
+            
+            <h3 style="color:#667eea;margin-top:15px">제1조 (목적)</h3>
+            <p>본 약관은 교회 예산 관리 시스템(이하 "서비스")의 이용 조건과 절차를 규정합니다.</p>
+            
+            <h3 style="color:#667eea;margin-top:15px">제2조 (서비스 내용)</h3>
+            <p>본 서비스는 교회 부서별 예산 신청·승인·집행 관리를 위한 웹 시스템입니다.</p>
+            <ul style="padding-left:20px">
+                <li>예산 신청 및 승인 처리</li>
+                <li>예산 집행 현황 조회</li>
+                <li>분기/반기/연간 보고서 생성</li>
+                <li>알림 발송 (시뮬레이션)</li>
+            </ul>
+            
+            <h3 style="color:#667eea;margin-top:15px">제3조 (회원 가입)</h3>
+            <p>회원 가입은 관리자에 의한 등록 방식으로 진행되며, 등록된 사용자는 임시 비밀번호로 로그인 후 비밀번호를 변경해야 합니다.</p>
+            
+            <h3 style="color:#667eea;margin-top:15px">제4조 (회원의 의무)</h3>
+            <ul style="padding-left:20px">
+                <li>본인의 계정정보를 타인과 공유하지 않는다.</li>
+                <li>비밀번호를 안전하게 관리한다.</li>
+                <li>예산 신청 시 정확한 정보를 입력한다.</li>
+                <li>시스템을 부정한 목적으로 사용하지 않는다.</li>
+            </ul>
+            
+            <h3 style="color:#667eea;margin-top:15px">제5조 (서비스 제공자의 의무)</h3>
+            <ul style="padding-left:20px">
+                <li>안정적인 서비스 운영을 위해 노력한다.</li>
+                <li>회원의 개인정보를 보호한다.</li>
+                <li>시스템 장애 시 신속히 대응한다.</li>
+            </ul>
+            
+            <h3 style="color:#667eea;margin-top:15px">제6조 (운영 주체)</h3>
+            <p><strong>시범운영 기간:</strong> 박호준 집사 (개인 명의)</p>
+            <p><strong>정식 운영 시:</strong> 교회 재정위원회 (별도 결정)</p>
+            
+            <h3 style="color:#667eea;margin-top:15px">제7조 (책임 한계)</h3>
+            <p>본 시스템은 시범운영 단계로, 데이터 백업과 보관에 최선을 다하지만 다음의 경우 책임이 제한됩니다:</p>
+            <ul style="padding-left:20px">
+                <li>천재지변, 시스템 장애로 인한 데이터 손실</li>
+                <li>회원의 부주의로 인한 계정 도용</li>
+                <li>회원이 입력한 잘못된 정보로 인한 문제</li>
+            </ul>
+            
+            <h3 style="color:#667eea;margin-top:15px">제8조 (분쟁 해결)</h3>
+            <p>본 서비스 이용 중 발생한 분쟁은 우선 당사자 간 협의로 해결하며, 협의가 어려운 경우 교회 재정위원회의 중재에 따릅니다.</p>
+            
+            <h3 style="color:#667eea;margin-top:15px">제9조 (약관 변경)</h3>
+            <p>본 약관은 필요 시 변경될 수 있으며, 변경 시 회원에게 공지합니다.</p>
+        </div>
+    `;
+}
+
+function getPrivacyHTML() {
+    return `
+        <h2 style="color:#2c3e50;margin-bottom:15px">🔐 개인정보 처리방침</h2>
+        <div style="font-size:13px;line-height:1.8;color:#2c3e50;max-height:60vh;overflow-y:auto;padding-right:10px">
+            <p style="color:#7f8c8d;margin-bottom:15px">시행일: 2026년 4월 1일 / 버전: ${POLICY_VERSION}</p>
+            
+            <p>교회 예산 관리 시스템(이하 "본 시스템")은 「개인정보 보호법」을 준수하며, 회원의 개인정보를 안전하게 처리하기 위해 본 방침을 수립합니다.</p>
+            
+            <h3 style="color:#667eea;margin-top:15px">1. 개인정보의 수집 항목</h3>
+            <p><strong>가. 필수 수집 항목</strong></p>
+            <ul style="padding-left:20px">
+                <li>이름, 이메일 주소, 비밀번호 (암호화 저장)</li>
+                <li>휴대폰 번호 (알림 발송용)</li>
+                <li>카카오톡 번호 (알림톡 발송용)</li>
+                <li>부서 정보, 역할(권한), 직분</li>
+            </ul>
+            <p style="margin-top:8px"><strong>나. 자동 수집 항목</strong></p>
+            <ul style="padding-left:20px">
+                <li>로그인 일시</li>
+                <li>이용 기록 (신청·승인 이력)</li>
+            </ul>
+            
+            <h3 style="color:#667eea;margin-top:15px">2. 개인정보의 수집 및 이용 목적</h3>
+            <ul style="padding-left:20px">
+                <li>회원 식별 및 본인 확인</li>
+                <li>예산 신청·승인 처리</li>
+                <li>알림 발송 (신청·승인·반려)</li>
+                <li>시스템 이용 통계 분석</li>
+                <li>부정 이용 방지</li>
+            </ul>
+            
+            <h3 style="color:#667eea;margin-top:15px">3. 개인정보의 보유 및 이용 기간</h3>
+            <ul style="padding-left:20px">
+                <li>회원 정보: 회원 탈퇴 시까지</li>
+                <li>이용 기록: 3년 (회계 자료 보관 의무)</li>
+                <li>로그인 기록: 1년</li>
+            </ul>
+            
+            <h3 style="color:#667eea;margin-top:15px">4. 개인정보의 제3자 제공</h3>
+            <p>본 시스템은 회원의 동의 없이 제3자에게 개인정보를 제공하지 않습니다. 단, 다음의 경우는 예외입니다:</p>
+            <ul style="padding-left:20px">
+                <li>법령에 의한 요구가 있는 경우</li>
+                <li>회원의 명시적 동의가 있는 경우</li>
+            </ul>
+            
+            <h3 style="color:#667eea;margin-top:15px">5. 개인정보 처리 위탁 (실제 도입 시)</h3>
+            <p>알림 발송 서비스 도입 시 다음과 같이 위탁됩니다:</p>
+            <ul style="padding-left:20px">
+                <li><strong>수탁자:</strong> 솔라피(주) 또는 카카오비즈니스 등</li>
+                <li><strong>위탁 업무:</strong> 알림 메시지 발송</li>
+                <li><strong>제공 항목:</strong> 휴대폰 번호, 메시지 내용</li>
+            </ul>
+            <p style="color:#e74c3c;font-size:11px;margin-top:5px">※ 현재 시범운영 단계에서는 알림이 시뮬레이션으로만 처리되며 외부에 정보를 제공하지 않습니다.</p>
+            
+            <h3 style="color:#667eea;margin-top:15px">6. 회원의 권리</h3>
+            <p>회원은 다음의 권리를 행사할 수 있습니다:</p>
+            <ul style="padding-left:20px">
+                <li><strong>열람권:</strong> 본인의 개인정보 확인</li>
+                <li><strong>정정·삭제권:</strong> 개인정보 수정 요청</li>
+                <li><strong>처리정지권:</strong> 개인정보 처리 중단 요청</li>
+                <li><strong>동의 철회권:</strong> 동의 철회 및 회원 탈퇴</li>
+            </ul>
+            <p style="margin-top:8px">→ 마이페이지에서 직접 처리 가능합니다.</p>
+            
+            <h3 style="color:#667eea;margin-top:15px">7. 개인정보 보호 책임자</h3>
+            <p>본 시스템의 개인정보 보호 책임자는 다음과 같습니다:</p>
+            <div style="background:#f8f9fa;padding:12px;border-radius:8px;margin-top:8px">
+                <p><strong>책임자:</strong> 박호준 집사 (시범운영 단계)</p>
+                <p><strong>이메일:</strong> 시스템 관리자에게 문의</p>
+                <p style="color:#e74c3c;font-size:11px;margin-top:5px">※ 정식 운영 시 교회 재정위원회로 이관 예정</p>
+            </div>
+            
+            <h3 style="color:#667eea;margin-top:15px">8. 개인정보의 안전성 확보 조치</h3>
+            <ul style="padding-left:20px">
+                <li>비밀번호 암호화 저장 (SHA-256)</li>
+                <li>접근 권한 관리 (역할별 5단계)</li>
+                <li>로그인 실패 5회 시 계정 잠금</li>
+                <li>세션 타임아웃 (60분)</li>
+                <li>HTTPS 통신 (GitHub Pages 기본)</li>
+            </ul>
+            
+            <h3 style="color:#667eea;margin-top:15px">9. 권익 침해 구제 방법</h3>
+            <p>개인정보 침해 신고는 다음 기관에 문의하실 수 있습니다:</p>
+            <ul style="padding-left:20px">
+                <li>개인정보보호위원회 (privacy.go.kr / 1833-6972)</li>
+                <li>개인정보침해신고센터 (118)</li>
+                <li>대검찰청 사이버범죄수사단 (02-3480-3573)</li>
+                <li>경찰청 사이버수사국 (cyberbureau.police.go.kr / 182)</li>
+            </ul>
+        </div>
+    `;
+}
+
+function getNotificationConsentHTML() {
+    return `
+        <h2 style="color:#2c3e50;margin-bottom:15px">📱 알림 수신 동의 (선택)</h2>
+        <div style="font-size:13px;line-height:1.8;color:#2c3e50">
+            <p>본 시스템은 다음의 시점에 알림을 발송합니다:</p>
+            <ul style="padding-left:20px">
+                <li>예산 신청 등록 시 (부서장에게)</li>
+                <li>1차 승인 시 (재정담당자에게)</li>
+                <li>최종 승인 시 (신청자에게)</li>
+                <li>반려 시 (신청자에게)</li>
+            </ul>
+            
+            <p style="margin-top:10px"><strong>발송 채널:</strong> 카카오 알림톡 또는 SMS</p>
+            <p><strong>예상 빈도:</strong> 본인 관련 처리 시에만 (월 5-20건)</p>
+            
+            <p style="margin-top:10px;color:#e74c3c">※ 현재 시범운영 단계로 실제 알림은 발송되지 않으며, 시뮬레이션으로만 표시됩니다.</p>
+            
+            <p style="margin-top:10px">알림 수신 동의는 선택 사항이며, 거부하셔도 시스템 이용에 영향이 없습니다. 언제든 마이페이지에서 알림 설정을 변경하실 수 있습니다.</p>
+        </div>
+    `;
+}
+
+// ============================================
+// v3.7: 카카오 로그인 (UI 만, 추후 활성화)
+// ============================================
+function handleKakaoLogin() {
+    showNotification('카카오 로그인은 현재 준비 중입니다. 시범운영 안정화 후 활성화될 예정입니다.', 'info');
+}
+
+// ============================================
+// v3.7: 비밀번호 표시 토글
+// ============================================
+function togglePasswordVisibility(inputId, btn) {
+    const input = document.getElementById(inputId);
+    if (input.type === 'password') {
+        input.type = 'text';
+        btn.textContent = '🙈';
+    } else {
+        input.type = 'password';
+        btn.textContent = '👁️';
+    }
+}
+
+// ============================================
+// v3.5: 알림 시스템 (시뮬레이션)
+// ============================================
+
+// 알림 종류 정의
+const NOTIFICATION_TYPES = {
+    REQUEST_CREATED: { id: 'request_created', name: '신규 신청 알림', desc: '신청이 등록되면 부서장에게', icon: '📝', defaultOn: true },
+    LEADER_APPROVED: { id: 'leader_approved', name: '1차 승인 알림', desc: '부서장 승인 시 재정담당자에게', icon: '✅', defaultOn: true },
+    FINAL_APPROVED: { id: 'final_approved', name: '최종 승인 알림', desc: '최종 승인 시 신청자에게', icon: '🎉', defaultOn: true },
+    REJECTED: { id: 'rejected', name: '반려 알림', desc: '반려 시 신청자에게', icon: '❌', defaultOn: true },
+    BUDGET_WARNING: { id: 'budget_warning', name: '예산 한도 경고', desc: '항목 예산 80% 도달 시', icon: '⚠️', defaultOn: false },
+    REMINDER: { id: 'reminder', name: '미처리 신청 리마인드', desc: '3일 이상 대기 중인 신청', icon: '⏰', defaultOn: false }
+};
+
+// ============================================
+// 알림 발송 (시뮬레이션)
+// ============================================
+function sendNotification(type, recipientUserId, data) {
+    const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '[]');
+    const recipient = users.find(u => u.id === recipientUserId);
+    if (!recipient) return false;
+    
+    // 사용자 알림 설정 확인
+    const settings = getUserNotificationSettings(recipientUserId);
+    if (settings && settings[type] === false) {
+        console.log(`[알림 차단] ${recipient.name}님이 ${type} 알림을 비활성화함`);
+        return false;
+    }
+    
+    // 알림 메시지 생성
+    const message = buildNotificationMessage(type, data);
+    
+    // 알림 이력 저장
+    const notification = {
+        id: 'n' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+        type: type,
+        recipientId: recipientUserId,
+        recipientName: recipient.name,
+        recipientPhone: recipient.phone || '',
+        recipientKakao: recipient.kakaoPhone || '',
+        title: message.title,
+        content: message.content,
+        relatedRequestId: data.requestId || null,
+        isRead: false,
+        createdAt: new Date().toISOString(),
+        status: 'simulation'  // 'simulation' | 'sent' | 'failed'
+    };
+    
+    const notifications = JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS) || '[]');
+    notifications.unshift(notification);  // 최신순
+    
+    // 최대 500개만 보관
+    if (notifications.length > 500) {
+        notifications.length = 500;
+    }
+    
+    localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(notifications));
+    
+    // 토스트 알림 (현재 사용자가 발송자일 때만)
+    if (currentUser) {
+        showToast(notification);
+    }
+    
+    // 알림 벨 배지 갱신 (수신자가 현재 로그인 중이면)
+    if (currentUser && currentUser.id === recipientUserId) {
+        updateNotificationBadge();
+    }
+    
+    return true;
+}
+
+// 알림 메시지 템플릿
+function buildNotificationMessage(type, data) {
+    const dept = data.department ? getDepartmentName(data.department) : '';
+    const cat = data.category ? getCategoryName(data.category) : '';
+    const amount = data.amount ? formatMoney(data.amount) : '';
+    
+    switch(type) {
+        case 'request_created':
+            return {
+                title: `[${dept}] 신규 예산 신청`,
+                content: `${data.requesterName}님의 신규 예산 신청이 등록되었습니다.\n\n▶ 부서: ${dept}\n▶ 항목: ${cat}\n▶ 금액: ${amount}\n▶ 사용일: ${data.usageDate}\n\n승인 처리해주세요.`
+            };
+        case 'leader_approved':
+            return {
+                title: `[${dept}] 1차 승인 - 재정 검토 필요`,
+                content: `부서장이 1차 승인하여 재정 검토를 요청합니다.\n\n▶ 부서: ${dept}\n▶ 항목: ${cat}\n▶ 금액: ${amount}\n▶ 신청자: ${data.requesterName}\n\n최종 승인 처리해주세요.`
+            };
+        case 'final_approved':
+            return {
+                title: `[${dept}] 예산 신청 최종 승인 ✅`,
+                content: `귀하의 예산 신청이 최종 승인되었습니다.\n\n▶ 항목: ${cat}\n▶ 금액: ${amount}\n▶ 사용일: ${data.usageDate}\n\n예산 사용 후 영수증을 보관해주세요.`
+            };
+        case 'rejected':
+            return {
+                title: `[${dept}] 예산 신청 반려 안내`,
+                content: `귀하의 예산 신청이 반려되었습니다.\n\n▶ 항목: ${cat}\n▶ 금액: ${amount}\n▶ 반려 사유: ${data.reason || '미기재'}\n\n수정 후 재신청해주세요.`
+            };
+        case 'budget_warning':
+            return {
+                title: `[${dept}] 예산 한도 경고`,
+                content: `${cat} 항목의 예산이 80% 이상 사용되었습니다.\n\n▶ 사용률: ${data.rate}%\n▶ 잔액: ${formatMoney(data.remaining)}\n\n예산 관리를 점검해주세요.`
+            };
+        case 'reminder':
+            return {
+                title: `[${dept}] 미처리 신청 리마인드`,
+                content: `3일 이상 대기 중인 신청이 있습니다.\n\n▶ 항목: ${cat}\n▶ 금액: ${amount}\n▶ 신청자: ${data.requesterName}\n\n검토를 부탁드립니다.`
+            };
+        default:
+            return { title: '알림', content: '새 알림이 있습니다.' };
+    }
+}
+
+// ============================================
+// 토스트 알림 (우측 상단)
+// ============================================
+function showToast(notification) {
+    const container = document.getElementById('toastContainer');
+    if (!container) return;
+    
+    const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '[]');
+    const recipient = users.find(u => u.id === notification.recipientId);
+    
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.id = 'toast-' + notification.id;
+    
+    toast.innerHTML = `
+        <div class="toast-header">
+            <span>📱 알림 발송됨 (시뮬레이션)</span>
+            <button class="toast-close" onclick="closeToast('${notification.id}')">×</button>
+        </div>
+        <div class="toast-body">
+            <div class="recipient">→ ${recipient ? recipient.name : '?'}님 (${notification.recipientKakao || notification.recipientPhone || '연락처 미등록'})</div>
+            <div class="message">${notification.content.substring(0, 100)}${notification.content.length > 100 ? '...' : ''}</div>
+            <div class="toast-actions">
+                <button class="btn-detail" onclick="showNotificationPreview('${notification.id}')">📋 상세 보기</button>
+                <button class="btn-dismiss" onclick="closeToast('${notification.id}')">닫기</button>
+            </div>
+        </div>
+    `;
+    
+    container.appendChild(toast);
+    
+    // 5초 후 자동 사라짐
+    setTimeout(() => {
+        const t = document.getElementById('toast-' + notification.id);
+        if (t) {
+            t.classList.add('fadeout');
+            setTimeout(() => t.remove(), 300);
+        }
+    }, 5000);
+}
+
+function closeToast(id) {
+    const t = document.getElementById('toast-' + id);
+    if (t) {
+        t.classList.add('fadeout');
+        setTimeout(() => t.remove(), 300);
+    }
+}
+
+// ============================================
+// 알림 발송 미리보기 모달
+// ============================================
+function showNotificationPreview(notificationId) {
+    const notifications = JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS) || '[]');
+    const notif = notifications.find(n => n.id === notificationId);
+    if (!notif) return;
+    
+    closeToast(notificationId);
+    
+    // 모달이 없으면 생성
+    let modal = document.getElementById('notifPreviewModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'notifPreviewModal';
+        modal.className = 'modal';
+        document.body.appendChild(modal);
+    }
+    
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width:480px">
+            <div class="modal-header">📱 알림 발송 (시뮬레이션)</div>
+            
+            <div style="margin-bottom:15px">
+                <div style="font-size:12px;color:#7f8c8d;margin-bottom:5px">받는 사람</div>
+                <div style="font-size:15px;font-weight:600;color:#2c3e50">${notif.recipientName}</div>
+                <div style="font-size:12px;color:#95a5a6;margin-top:3px">
+                    📱 카카오톡: ${notif.recipientKakao || '미등록'}<br>
+                    📞 휴대폰: ${notif.recipientPhone || '미등록'}
+                </div>
+            </div>
+            
+            <div class="notification-preview-box">
+                <div class="notification-preview-header">
+                    💬 카카오 알림톡 미리보기
+                </div>
+                <div class="notification-preview-content">[교회 예산 시스템]
+
+${notif.title}
+
+${notif.content}
+
+[👉 시스템 바로가기]</div>
+                <div class="notification-preview-footer">
+                    ⚠️ 시뮬레이션 모드 - 실제 발송되지 않습니다
+                </div>
+            </div>
+            
+            <div style="font-size:11px;color:#95a5a6;text-align:right;margin-top:10px">
+                발송일시: ${new Date(notif.createdAt).toLocaleString('ko-KR')}
+            </div>
+            
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeNotifPreview()">닫기</button>
+            </div>
+        </div>
+    `;
+    
+    modal.classList.add('active');
+}
+
+function closeNotifPreview() {
+    const modal = document.getElementById('notifPreviewModal');
+    if (modal) modal.classList.remove('active');
+}
+
+// ============================================
+// 알림함 (헤더 드롭다운)
+// ============================================
+function toggleNotificationDropdown(event) {
+    if (event) event.stopPropagation();
+    const dropdown = document.getElementById('notificationDropdown');
+    const isOpen = dropdown.classList.contains('active');
+    
+    if (isOpen) {
+        dropdown.classList.remove('active');
+    } else {
+        renderNotificationList();
+        dropdown.classList.add('active');
+        
+        // 외부 클릭 시 닫힘
+        setTimeout(() => {
+            document.addEventListener('click', closeNotificationDropdownOnce, { once: true });
+        }, 100);
+    }
+}
+
+function closeNotificationDropdownOnce() {
+    document.getElementById('notificationDropdown').classList.remove('active');
+}
+
+function renderNotificationList() {
+    if (!currentUser) return;
+    const list = document.getElementById('notificationList');
+    const notifications = JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS) || '[]');
+    const myNotifs = notifications.filter(n => n.recipientId === currentUser.id);
+    
+    if (myNotifs.length === 0) {
+        list.innerHTML = '<div class="notification-empty">받은 알림이 없습니다</div>';
+        return;
+    }
+    
+    list.innerHTML = myNotifs.slice(0, 20).map(n => `
+        <div class="notification-item ${n.isRead ? '' : 'unread'}" onclick="onNotificationClick('${n.id}')">
+            <div class="notification-item-header">
+                <span class="notification-item-type">${getNotificationTypeName(n.type)}</span>
+                <span class="notification-item-time">${formatTimeAgo(n.createdAt)}</span>
+            </div>
+            <div class="notification-item-title">${n.title}</div>
+            <div class="notification-item-content">${n.content.substring(0, 60).replace(/\n/g, ' ')}...</div>
+        </div>
+    `).join('');
+}
+
+function getNotificationTypeName(type) {
+    const map = {
+        'request_created': '신청',
+        'leader_approved': '1차승인',
+        'final_approved': '최종승인',
+        'rejected': '반려',
+        'budget_warning': '예산경고',
+        'reminder': '리마인드'
+    };
+    return map[type] || type;
+}
+
+function formatTimeAgo(dateStr) {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diff = (now - date) / 1000;
+    
+    if (diff < 60) return '방금 전';
+    if (diff < 3600) return Math.floor(diff/60) + '분 전';
+    if (diff < 86400) return Math.floor(diff/3600) + '시간 전';
+    if (diff < 604800) return Math.floor(diff/86400) + '일 전';
+    return date.toLocaleDateString('ko-KR');
+}
+
+function onNotificationClick(id) {
+    const notifications = JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS) || '[]');
+    const notif = notifications.find(n => n.id === id);
+    if (!notif) return;
+    
+    // 읽음 처리
+    notif.isRead = true;
+    localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(notifications));
+    
+    // 드롭다운 닫기
+    document.getElementById('notificationDropdown').classList.remove('active');
+    
+    // 관련 신청 있으면 상세 모달 열기
+    if (notif.relatedRequestId) {
+        showDetailModal(notif.relatedRequestId);
+    } else {
+        // 알림 자체 미리보기
+        showNotificationPreview(id);
+    }
+    
+    updateNotificationBadge();
+}
+
+function markAllNotificationsRead() {
+    if (!currentUser) return;
+    const notifications = JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS) || '[]');
+    notifications.forEach(n => {
+        if (n.recipientId === currentUser.id) n.isRead = true;
+    });
+    localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(notifications));
+    renderNotificationList();
+    updateNotificationBadge();
+}
+
+function updateNotificationBadge() {
+    if (!currentUser) return;
+    const badge = document.getElementById('notificationBadge');
+    if (!badge) return;
+    
+    const notifications = JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS) || '[]');
+    const unreadCount = notifications.filter(n => n.recipientId === currentUser.id && !n.isRead).length;
+    
+    if (unreadCount > 0) {
+        badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+        badge.style.display = 'flex';
+    } else {
+        badge.style.display = 'none';
+    }
+}
+
+// ============================================
+// 알림 설정 (사용자별)
+// ============================================
+function getUserNotificationSettings(userId) {
+    const all = JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTIFICATION_SETTINGS) || '{}');
+    if (!all[userId]) {
+        // 기본값 반환
+        const defaults = {};
+        Object.values(NOTIFICATION_TYPES).forEach(t => {
+            defaults[t.id] = t.defaultOn;
+        });
+        return defaults;
+    }
+    return all[userId];
+}
+
+function saveUserNotificationSettings(userId, settings) {
+    const all = JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTIFICATION_SETTINGS) || '{}');
+    all[userId] = settings;
+    localStorage.setItem(STORAGE_KEYS.NOTIFICATION_SETTINGS, JSON.stringify(all));
+}
+
+function showNotificationSettings() {
+    if (!currentUser) return;
+    switchView('notifSettingsView');
+    document.querySelector('[data-view="notif-settings"]').classList.add('active');
+    
+    // 연락처 표시
+    const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '[]');
+    const user = users.find(u => u.id === currentUser.id);
+    
+    document.getElementById('notifKakaoPhone').value = user?.kakaoPhone || '';
+    document.getElementById('notifPhone').value = user?.phone || '';
+    
+    // 알림 종류 토글 렌더링
+    const settings = getUserNotificationSettings(currentUser.id);
+    const list = document.getElementById('notifTypesList');
+    list.innerHTML = Object.values(NOTIFICATION_TYPES).map(t => `
+        <div class="settings-toggle">
+            <div>
+                <div class="settings-toggle-label">${t.icon} ${t.name}</div>
+                <div class="settings-toggle-desc">${t.desc}</div>
+            </div>
+            <label class="switch">
+                <input type="checkbox" id="notif-${t.id}" ${settings[t.id] !== false ? 'checked' : ''}>
+                <span class="slider"></span>
+            </label>
+        </div>
+    `).join('');
+}
+
+function saveNotificationSettings() {
+    if (!currentUser) return;
+    
+    // 연락처 저장
+    const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '[]');
+    const userIdx = users.findIndex(u => u.id === currentUser.id);
+    if (userIdx >= 0) {
+        users[userIdx].kakaoPhone = document.getElementById('notifKakaoPhone').value.trim();
+        users[userIdx].phone = document.getElementById('notifPhone').value.trim();
+        localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+        
+        // 현재 사용자 정보도 갱신
+        currentUser.kakaoPhone = users[userIdx].kakaoPhone;
+        currentUser.phone = users[userIdx].phone;
+        localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(currentUser));
+    }
+    
+    // 알림 설정 저장
+    const settings = {};
+    Object.values(NOTIFICATION_TYPES).forEach(t => {
+        const checkbox = document.getElementById('notif-' + t.id);
+        if (checkbox) settings[t.id] = checkbox.checked;
+    });
+    saveUserNotificationSettings(currentUser.id, settings);
+    
+    showNotification('알림 설정이 저장되었습니다.', 'success');
+}
+
+// ============================================
+// 알림 이력 화면
+// ============================================
+function showNotificationLog() {
+    if (!currentUser) return;
+    
+    // 권한 체크 (관리자/재정위원장/재정담당자)
+    if (!['admin', 'financeChair', 'finance'].includes(currentUser.role)) {
+        showNotification('알림 이력은 재정담당자 이상만 조회 가능합니다.', 'error');
+        return;
+    }
+    
+    switchView('notifLogView');
+    document.querySelector('[data-view="notif-log"]').classList.add('active');
+    renderNotificationLog();
+}
+
+function renderNotificationLog() {
+    const notifications = JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS) || '[]');
+    
+    // 통계 계산
+    const total = notifications.length;
+    const today = notifications.filter(n => {
+        const d = new Date(n.createdAt);
+        const now = new Date();
+        return d.toDateString() === now.toDateString();
+    }).length;
+    const thisMonth = notifications.filter(n => {
+        const d = new Date(n.createdAt);
+        const now = new Date();
+        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    }).length;
+    
+    // 예상 비용 (실제 도입 시)
+    const kakaoCost = thisMonth * 9; // 약 9원/건
+    const smsCost = thisMonth * 22; // 약 22원/건
+    
+    // 통계 카드
+    document.getElementById('notifLogStats').innerHTML = `
+        <div class="stat-card info">
+            <div class="stat-number">${total}</div>
+            <div class="stat-label">전체 발송</div>
+        </div>
+        <div class="stat-card success">
+            <div class="stat-number">${today}</div>
+            <div class="stat-label">오늘 발송</div>
+        </div>
+        <div class="stat-card warning">
+            <div class="stat-number">${thisMonth}</div>
+            <div class="stat-label">이번 달 발송</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" style="font-size:18px">${formatMoney(kakaoCost)}</div>
+            <div class="stat-label">예상 비용 (알림톡)</div>
+            <div class="stat-sub">SMS 시: ${formatMoney(smsCost)}</div>
+        </div>
+    `;
+    
+    // 테이블
+    const tableEl = document.getElementById('notifLogTable');
+    if (notifications.length === 0) {
+        tableEl.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><p>발송 이력이 없습니다</p></div>';
+        return;
+    }
+    
+    const recent = notifications.slice(0, 100);
+    tableEl.innerHTML = `
+        <table class="notification-log-table">
+            <thead>
+                <tr>
+                    <th>일시</th>
+                    <th>수신자</th>
+                    <th>연락처</th>
+                    <th>유형</th>
+                    <th>제목</th>
+                    <th>상태</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${recent.map(n => `
+                    <tr style="cursor:pointer" onclick="showNotificationPreview('${n.id}')">
+                        <td>${new Date(n.createdAt).toLocaleString('ko-KR', {month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}</td>
+                        <td><strong>${n.recipientName}</strong></td>
+                        <td style="font-size:11px;color:#7f8c8d">${n.recipientKakao || n.recipientPhone || '미등록'}</td>
+                        <td><span class="notification-item-type">${getNotificationTypeName(n.type)}</span></td>
+                        <td style="font-size:12px">${n.title.substring(0, 30)}${n.title.length > 30 ? '...' : ''}</td>
+                        <td><span class="log-status simulation">시뮬레이션</span></td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
+}
+
+function clearAllNotifications() {
+    if (!confirm('모든 알림 이력을 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.')) return;
+    localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify([]));
+    renderNotificationLog();
+    updateNotificationBadge();
+    showNotification('알림 이력이 삭제되었습니다.', 'success');
+}
+
+// ============================================
+// v3.7: 마이페이지
+// ============================================
+function showMyPage() {
+    if (!currentUser) return;
+    switchView('myPageView');
+    document.querySelector('[data-view="my-page"]').classList.add('active');
+    
+    const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '[]');
+    const user = users.find(u => u.id === currentUser.id);
+    if (!user) return;
+    
+    // 내 정보 표시
+    const lastLogin = user.lastLoginAt 
+        ? new Date(user.lastLoginAt).toLocaleString('ko-KR') 
+        : '기록 없음';
+    const joinDate = user.joinDate || '미상';
+    
+    document.getElementById('myInfoDisplay').innerHTML = `
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px">
+            <div style="padding:10px;background:#f8f9fa;border-radius:6px">
+                <div style="font-size:11px;color:#95a5a6">이름</div>
+                <div style="font-weight:600;color:#2c3e50">${user.name}</div>
+            </div>
+            <div style="padding:10px;background:#f8f9fa;border-radius:6px">
+                <div style="font-size:11px;color:#95a5a6">이메일</div>
+                <div style="font-weight:600;color:#2c3e50">${user.email}</div>
+            </div>
+            <div style="padding:10px;background:#f8f9fa;border-radius:6px">
+                <div style="font-size:11px;color:#95a5a6">부서</div>
+                <div style="font-weight:600;color:#2c3e50">${getDepartmentName(user.department)}</div>
+            </div>
+            <div style="padding:10px;background:#f8f9fa;border-radius:6px">
+                <div style="font-size:11px;color:#95a5a6">역할</div>
+                <div style="font-weight:600;color:#667eea">${ROLE_NAMES[user.role]}</div>
+            </div>
+            <div style="padding:10px;background:#f8f9fa;border-radius:6px">
+                <div style="font-size:11px;color:#95a5a6">직분</div>
+                <div style="font-weight:600;color:#2c3e50">${user.position || '미등록'}</div>
+            </div>
+            <div style="padding:10px;background:#f8f9fa;border-radius:6px">
+                <div style="font-size:11px;color:#95a5a6">가입일</div>
+                <div style="font-weight:600;color:#2c3e50">${joinDate}</div>
+            </div>
+            <div style="padding:10px;background:#f8f9fa;border-radius:6px">
+                <div style="font-size:11px;color:#95a5a6">마지막 로그인</div>
+                <div style="font-weight:600;color:#2c3e50;font-size:12px">${lastLogin}</div>
+            </div>
+        </div>
+    `;
+    
+    // 정보 수정 폼 채우기
+    document.getElementById('myName').value = user.name || '';
+    document.getElementById('myPhone').value = user.phone || '';
+    document.getElementById('myKakaoPhone').value = user.kakaoPhone || '';
+    document.getElementById('myPosition').value = user.position || '';
+    
+    // 비밀번호 필드 초기화
+    document.getElementById('currentPassword').value = '';
+    document.getElementById('newPassword').value = '';
+    document.getElementById('newPasswordConfirm').value = '';
+    
+    // 동의 내역 표시
+    const consent = getConsent(currentUser.id);
+    const consentEl = document.getElementById('consentDisplay');
+    if (consent) {
+        const consentDate = new Date(consent.consentedAt).toLocaleString('ko-KR');
+        consentEl.innerHTML = `
+            <div style="background:#e8f5e9;padding:12px;border-radius:6px;font-size:13px;color:#155724">
+                <div style="margin-bottom:8px">✅ 동의 완료 (버전: ${consent.version})</div>
+                <div style="font-size:11px;color:#27ae60">동의 일시: ${consentDate}</div>
+                <div style="margin-top:8px;font-size:12px">
+                    ${consent.terms ? '✓' : '✗'} 이용약관<br>
+                    ${consent.privacy ? '✓' : '✗'} 개인정보 처리방침<br>
+                    ${consent.notification ? '✓' : '✗'} 알림 수신 동의 (선택)
+                </div>
+            </div>
+        `;
+    } else {
+        consentEl.innerHTML = `
+            <div style="background:#fff3cd;padding:12px;border-radius:6px;font-size:13px;color:#856404">
+                ⚠️ 동의 내역이 기록되지 않았습니다. 관리자가 등록한 사용자는 별도 동의 절차가 필요할 수 있습니다.
+            </div>
+        `;
+    }
+}
+
+function saveMyInfo() {
+    const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '[]');
+    const userIdx = users.findIndex(u => u.id === currentUser.id);
+    if (userIdx < 0) return;
+    
+    const newName = document.getElementById('myName').value.trim();
+    const newPhone = document.getElementById('myPhone').value.trim();
+    const newKakao = document.getElementById('myKakaoPhone').value.trim();
+    const newPosition = document.getElementById('myPosition').value.trim();
+    
+    if (!newName) {
+        showNotification('이름은 비워둘 수 없습니다.', 'error');
+        return;
+    }
+    
+    users[userIdx].name = newName;
+    users[userIdx].phone = newPhone;
+    users[userIdx].kakaoPhone = newKakao || newPhone; // 카톡 비번 시 휴대폰 사용
+    users[userIdx].position = newPosition;
+    users[userIdx].updatedAt = new Date().toISOString();
+    
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+    
+    // 현재 사용자 정보도 갱신
+    currentUser = users[userIdx];
+    localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(currentUser));
+    
+    // 헤더 갱신
+    document.getElementById('userBadge').textContent = currentUser.name;
+    
+    showNotification('정보가 저장되었습니다.', 'success');
+    showMyPage(); // 새로 표시
+}
+
+async function changeMyPassword() {
+    const current = document.getElementById('currentPassword').value;
+    const newPwd = document.getElementById('newPassword').value;
+    const confirm = document.getElementById('newPasswordConfirm').value;
+    
+    if (!current || !newPwd || !confirm) {
+        showNotification('모든 비밀번호 필드를 입력하세요.', 'error');
+        return;
+    }
+    
+    if (newPwd !== confirm) {
+        showNotification('새 비밀번호가 일치하지 않습니다.', 'error');
+        return;
+    }
+    
+    // 비밀번호 정책 검증
+    const validation = validatePassword(newPwd);
+    if (!validation.valid) {
+        showNotification('비밀번호 정책 위반: ' + validation.errors.join(', '), 'error');
+        return;
+    }
+    
+    // 현재 비밀번호 검증
+    const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '[]');
+    const userIdx = users.findIndex(u => u.id === currentUser.id);
+    if (userIdx < 0) return;
+    
+    const currentValid = await verifyPassword(current, users[userIdx].passwordHash);
+    if (!currentValid) {
+        showNotification('현재 비밀번호가 올바르지 않습니다.', 'error');
+        return;
+    }
+    
+    // 새 비밀번호 해싱 후 저장
+    users[userIdx].passwordHash = await hashPassword(newPwd);
+    users[userIdx].firstLogin = false; // 첫 로그인 플래그 해제
+    users[userIdx].passwordChangedAt = new Date().toISOString();
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+    
+    // 비밀번호 필드 초기화
+    document.getElementById('currentPassword').value = '';
+    document.getElementById('newPassword').value = '';
+    document.getElementById('newPasswordConfirm').value = '';
+    
+    showNotification('비밀번호가 성공적으로 변경되었습니다.', 'success');
+}
+
+function requestWithdraw() {
+    if (currentUser.role === 'admin') {
+        showNotification('관리자 계정은 탈퇴할 수 없습니다. 다른 관리자에게 권한을 인계 후 처리하세요.', 'error');
+        return;
+    }
+    
+    const confirmText = prompt(
+        '회원 탈퇴를 진행하시겠습니까?\n\n' +
+        '⚠️ 탈퇴 시 처리:\n' +
+        '- 개인정보 즉시 삭제 (이름은 익명화)\n' +
+        '- 신청·승인 이력은 회계 자료로 3년간 익명 보관\n' +
+        '- 복구 불가능\n\n' +
+        '계속하려면 "탈퇴합니다"를 입력하세요:'
+    );
+    
+    if (confirmText !== '탈퇴합니다') {
+        showNotification('탈퇴가 취소되었습니다.', 'info');
+        return;
+    }
+    
+    const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '[]');
+    const userIdx = users.findIndex(u => u.id === currentUser.id);
+    if (userIdx < 0) return;
+    
+    // 익명화 처리 (개인정보 삭제, 이력은 보존)
+    users[userIdx] = {
+        id: users[userIdx].id,
+        name: '(탈퇴 회원)',
+        email: 'withdrawn_' + users[userIdx].id + '@deleted.local',
+        passwordHash: 'WITHDRAWN',
+        department: users[userIdx].department,
+        role: users[userIdx].role,
+        phone: '',
+        kakaoPhone: '',
+        position: '',
+        isActive: false,
+        withdrawnAt: new Date().toISOString()
+    };
+    
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+    
+    // 동의 정보 삭제
+    const consents = JSON.parse(localStorage.getItem(STORAGE_KEYS.CONSENTS) || '{}');
+    delete consents[currentUser.id];
+    localStorage.setItem(STORAGE_KEYS.CONSENTS, JSON.stringify(consents));
+    
+    showNotification('회원 탈퇴가 완료되었습니다.', 'success');
+    
+    // 즉시 로그아웃
+    setTimeout(() => {
+        currentUser = null;
+        clearSession();
+        document.getElementById('loginScreen').style.display = 'flex';
+        document.getElementById('mainApp').style.display = 'none';
+    }, 2000);
+}
+
+// ============================================
+// v3.7: 사용자 관리 (관리자 전용)
+// ============================================
+function showUserManage() {
+    if (!currentUser || currentUser.role !== 'admin') {
+        showNotification('관리자만 접근 가능합니다.', 'error');
+        return;
+    }
+    switchView('userManageView');
+    document.querySelector('[data-view="user-manage"]').classList.add('active');
+    renderUserList();
+}
+
+function renderUserList() {
+    const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '[]');
+    
+    // 통계
+    const total = users.filter(u => u.isActive !== false).length;
+    const byRole = {};
+    users.filter(u => u.isActive !== false).forEach(u => {
+        byRole[u.role] = (byRole[u.role] || 0) + 1;
+    });
+    
+    const consents = JSON.parse(localStorage.getItem(STORAGE_KEYS.CONSENTS) || '{}');
+    const consentedCount = Object.keys(consents).length;
+    
+    document.getElementById('userStats').innerHTML = `
+        <div class="stat-card info">
+            <div class="stat-number">${total}</div>
+            <div class="stat-label">전체 활성 사용자</div>
+        </div>
+        <div class="stat-card success">
+            <div class="stat-number">${(byRole.member || 0) + (byRole.leader || 0)}</div>
+            <div class="stat-label">부서 사용자</div>
+            <div class="stat-sub">부서원 ${byRole.member || 0} / 부서장 ${byRole.leader || 0}</div>
+        </div>
+        <div class="stat-card warning">
+            <div class="stat-number">${(byRole.finance || 0) + (byRole.financeChair || 0) + (byRole.admin || 0)}</div>
+            <div class="stat-label">관리자급</div>
+            <div class="stat-sub">재정 ${byRole.finance || 0} / 위원장 ${byRole.financeChair || 0} / 관리자 ${byRole.admin || 0}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">${consentedCount}</div>
+            <div class="stat-label">동의 완료</div>
+            <div class="stat-sub">미동의 ${total - consentedCount}명</div>
+        </div>
+    `;
+    
+    // 사용자 목록
+    const tableEl = document.getElementById('userListTable');
+    if (users.length === 0) {
+        tableEl.innerHTML = '<div class="empty-state"><div class="empty-icon">👥</div><p>등록된 사용자가 없습니다</p></div>';
+        return;
+    }
+    
+    tableEl.innerHTML = `
+        <table class="notification-log-table">
+            <thead>
+                <tr>
+                    <th>이름</th>
+                    <th>이메일</th>
+                    <th>부서</th>
+                    <th>역할</th>
+                    <th>직분</th>
+                    <th>연락처</th>
+                    <th>상태</th>
+                    <th>동의</th>
+                    <th>작업</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${users.map(u => {
+                    const isActive = u.isActive !== false;
+                    const hasConsent = !!consents[u.id];
+                    return `
+                    <tr style="${!isActive ? 'opacity:0.5' : ''}">
+                        <td><strong>${u.name}</strong>${u.firstLogin ? ' <span style="background:#fff3cd;color:#856404;padding:2px 6px;border-radius:4px;font-size:10px">신규</span>' : ''}</td>
+                        <td style="font-size:11px">${u.email}</td>
+                        <td style="font-size:12px">${getDepartmentName(u.department)}</td>
+                        <td><span class="notification-item-type">${ROLE_NAMES[u.role]}</span></td>
+                        <td style="font-size:12px">${u.position || '-'}</td>
+                        <td style="font-size:11px;color:#7f8c8d">${u.phone || '-'}</td>
+                        <td>${isActive ? '<span class="log-status success">활성</span>' : '<span class="log-status simulation">비활성</span>'}</td>
+                        <td>${hasConsent ? '✓' : '✗'}</td>
+                        <td>
+                            <button onclick="resetUserPassword('${u.id}')" 
+                                style="padding:4px 8px;font-size:10px;border:1px solid #f39c12;background:white;color:#f39c12;border-radius:4px;cursor:pointer"
+                                ${!isActive || u.id === currentUser.id ? 'disabled' : ''}>
+                                🔑 비번 초기화
+                            </button>
+                        </td>
+                    </tr>
+                    `;
+                }).join('')}
+            </tbody>
+        </table>
+    `;
+}
+
+function showAddUserModal() {
+    // 모달 폼 초기화
+    document.getElementById('newUserName').value = '';
+    document.getElementById('newUserEmail').value = '';
+    document.getElementById('newUserDepartment').value = '';
+    document.getElementById('newUserRole').value = 'member';
+    document.getElementById('newUserPosition').value = '';
+    document.getElementById('newUserPhone').value = '';
+    document.getElementById('newUserKakao').value = '';
+    
+    document.getElementById('addUserModal').classList.add('active');
+}
+
+function closeAddUserModal() {
+    document.getElementById('addUserModal').classList.remove('active');
+}
+
+let lastTempPassword = ''; // 복사용 임시 저장
+
+async function addNewUser() {
+    const name = document.getElementById('newUserName').value.trim();
+    const email = document.getElementById('newUserEmail').value.trim();
+    const department = document.getElementById('newUserDepartment').value;
+    const role = document.getElementById('newUserRole').value;
+    const position = document.getElementById('newUserPosition').value.trim();
+    const phone = document.getElementById('newUserPhone').value.trim();
+    const kakao = document.getElementById('newUserKakao').value.trim();
+    
+    // 검증
+    if (!name || !email || !department || !role) {
+        showNotification('필수 항목(*)을 모두 입력하세요.', 'error');
+        return;
+    }
+    
+    // 이메일 중복 체크
+    const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '[]');
+    if (users.some(u => u.email === email && u.isActive !== false)) {
+        showNotification('이미 등록된 이메일입니다.', 'error');
+        return;
+    }
+    
+    // 임시 비밀번호 생성
+    const tempPassword = generateTempPassword();
+    const passwordHash = await hashPassword(tempPassword);
+    
+    const newUser = {
+        id: 'u' + Date.now(),
+        name,
+        email,
+        passwordHash,
+        department,
+        role,
+        position,
+        phone,
+        kakaoPhone: kakao || phone,
+        joinDate: new Date().toISOString().split('T')[0],
+        firstLogin: true,
+        isActive: true,
+        createdBy: currentUser.id,
+        createdAt: new Date().toISOString()
+    };
+    
+    users.push(newUser);
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+    
+    // 임시 비번 모달 표시
+    lastTempPassword = `이메일: ${email}\n임시 비밀번호: ${tempPassword}`;
+    document.getElementById('tempPasswordInfo').innerHTML = `
+        <div style="margin-bottom:10px">
+            <div style="font-size:11px;color:#7f8c8d">이름</div>
+            <div style="font-size:14px;font-weight:600">${name}</div>
+        </div>
+        <div style="margin-bottom:10px">
+            <div style="font-size:11px;color:#7f8c8d">이메일</div>
+            <div style="font-size:14px;font-weight:600">${email}</div>
+        </div>
+        <div style="margin-bottom:10px">
+            <div style="font-size:11px;color:#7f8c8d">임시 비밀번호</div>
+            <div style="font-size:18px;font-weight:bold;color:#e74c3c;letter-spacing:2px">${tempPassword}</div>
+        </div>
+        <div style="margin-top:15px;padding:10px;background:white;border-radius:6px;border:1px solid #e0e0e0;font-size:12px">
+            <strong>📋 사용자 안내 메시지 예시:</strong><br><br>
+            "${name}님, 교회 예산 시스템에 등록되셨습니다.<br>
+            로그인 정보는 다음과 같습니다:<br>
+            - 이메일: ${email}<br>
+            - 임시 비밀번호: <strong>${tempPassword}</strong><br><br>
+            첫 로그인 후 반드시 비밀번호를 변경해주세요.<br>
+            URL: https://KMAchurch1004.github.io/kamchurch-budget/"
+        </div>
+    `;
+    
+    closeAddUserModal();
+    document.getElementById('tempPasswordModal').classList.add('active');
+    
+    showNotification(`${name}님이 등록되었습니다.`, 'success');
+}
+
+function copyTempPassword() {
+    if (!lastTempPassword) return;
+    navigator.clipboard.writeText(lastTempPassword).then(() => {
+        showNotification('클립보드에 복사되었습니다.', 'success');
+    }).catch(() => {
+        showNotification('복사에 실패했습니다. 직접 복사해주세요.', 'error');
+    });
+}
+
+function closeTempPasswordModal() {
+    document.getElementById('tempPasswordModal').classList.remove('active');
+    lastTempPassword = ''; // 보안: 메모리에서 제거
+    renderUserList(); // 사용자 목록 새로고침
+}
+
+async function resetUserPassword(userId) {
+    if (!confirm('이 사용자의 비밀번호를 초기화하시겠습니까?\n\n임시 비밀번호가 새로 발급됩니다.')) return;
+    
+    const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '[]');
+    const userIdx = users.findIndex(u => u.id === userId);
+    if (userIdx < 0) return;
+    
+    const tempPassword = generateTempPassword();
+    users[userIdx].passwordHash = await hashPassword(tempPassword);
+    users[userIdx].firstLogin = true; // 다시 첫 로그인 상태로
+    users[userIdx].passwordResetAt = new Date().toISOString();
+    
+    // 잠금 해제
+    const attempts = JSON.parse(localStorage.getItem(STORAGE_KEYS.LOGIN_ATTEMPTS) || '{}');
+    delete attempts[users[userIdx].email];
+    localStorage.setItem(STORAGE_KEYS.LOGIN_ATTEMPTS, JSON.stringify(attempts));
+    
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+    
+    // 임시 비번 모달 표시
+    const user = users[userIdx];
+    lastTempPassword = `이메일: ${user.email}\n임시 비밀번호: ${tempPassword}`;
+    document.getElementById('tempPasswordInfo').innerHTML = `
+        <div style="margin-bottom:10px">
+            <div style="font-size:11px;color:#7f8c8d">이름</div>
+            <div style="font-size:14px;font-weight:600">${user.name}</div>
+        </div>
+        <div style="margin-bottom:10px">
+            <div style="font-size:11px;color:#7f8c8d">이메일</div>
+            <div style="font-size:14px;font-weight:600">${user.email}</div>
+        </div>
+        <div style="margin-bottom:10px">
+            <div style="font-size:11px;color:#7f8c8d">새 임시 비밀번호</div>
+            <div style="font-size:18px;font-weight:bold;color:#e74c3c;letter-spacing:2px">${tempPassword}</div>
+        </div>
+        <div style="background:#fff3cd;color:#856404;padding:10px;border-radius:6px;margin-top:10px;font-size:12px">
+            ⚠️ 이 사용자에게 새 임시 비밀번호를 안내하고, 첫 로그인 후 비밀번호를 변경하도록 알려주세요.
+        </div>
+    `;
+    
+    document.getElementById('tempPasswordModal').classList.add('active');
+    showNotification('비밀번호가 초기화되었습니다.', 'success');
+}
+
+
 initApp();
 </script>
 
