@@ -1510,7 +1510,7 @@ input:checked + .slider:before {
     <div class="login-box">
         <div class="logo">⛪</div>
         <h1 class="login-title">교회 예산 관리 시스템</h1>
-        <p class="login-subtitle">v3.8 - 구글 시트 백엔드 연동</p>
+        <p class="login-subtitle">v3.8.1 - 구글 시트 완전 연동 (실시간 동기화)</p>
 
         <div id="loginForm">
             <div class="form-group">
@@ -1591,6 +1591,8 @@ input:checked + .slider:before {
         <div class="header-right">
             <span class="role-badge" id="roleBadge"></span>
             <span class="user-badge" id="userBadge"></span>
+            <!-- v3.8: 시트 동기화 버튼 -->
+            <button class="btn-logout" style="background:#27ae60" onclick="manualSync()" title="구글 시트에서 최신 데이터 가져오기">🔄 동기화</button>
             <!-- v3.5: 알림 벨 -->
             <div class="notification-bell" onclick="toggleNotificationDropdown(event)" title="알림함">
                 🔔
@@ -2283,10 +2285,10 @@ let editingRequestId = null;  // v3: 수정 중인 신청
 const API_CONFIG = {
     // ⚠️ 호준님이 Apps Script 배포 후 이 URL 교체!
     // 예: https://script.google.com/macros/s/AKfycbz.../exec
-    URL: 'https://script.google.com/macros/s/AKfycbzGW-KFGPSlJX4sdD5PqbVcJcO5iDv_6mbdYNYfKRusYy_ICqSoqxiV-WuNo6KtLO6j/exec',
+    URL: 'https://script.google.com/macros/s/AKfycbzGW-KFGPSlJX4sdD5PqbVcJcO5iDv_6mbdYNYfKRusYy_lCqSoqxiV-WuNo6KtLO6j/exec',
     
     // 오프라인 모드 (URL 미설정 시 자동 LocalStorage 사용)
-    OFFLINE_MODE: false,  // URL 설정 후 false로 변경
+    OFFLINE_MODE: false,  // URL 설정됨
     
     // 캐시 TTL (밀리초)
     CACHE_TTL: 5 * 60 * 1000  // 5분
@@ -2361,6 +2363,90 @@ function invalidateCache(prefix = '') {
         for (const key of apiCache.keys()) {
             if (key.startsWith(prefix)) apiCache.delete(key);
         }
+    }
+}
+
+/**
+ * v3.8: 사용자 수동 동기화 (헤더 버튼)
+ */
+async function manualSync() {
+    const result = await syncFromSheet(false);
+    if (result) {
+        showNotification('시트 데이터 동기화 완료!', 'success');
+        // 현재 화면 다시 그리기
+        const activeView = document.querySelector('.menu-item.active')?.dataset.view;
+        if (activeView === 'dashboard') renderDashboard();
+        else if (activeView === 'requests') renderRequests();
+        else if (activeView === 'approval') renderApproval();
+        else if (activeView === 'budget-status') renderBudgetStatus();
+        renderSidebarBudget();
+    } else {
+        showNotification('동기화 실패 (오프라인 모드)', 'error');
+    }
+}
+
+/**
+ * v3.8 옵션 A: 시트에서 LocalStorage로 동기화
+ * 로그인 시점 + 주기적으로 호출
+ */
+async function syncFromSheet(silent = false) {
+    if (API_CONFIG.OFFLINE_MODE || API_CONFIG.URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
+        return false; // 오프라인 모드
+    }
+    
+    if (!silent) showLoading('시트에서 데이터 동기화 중...');
+    
+    try {
+        // 1. 신청내역 시트 → LocalStorage
+        const reqResult = await fetchAPI('getRequests', {});
+        if (reqResult && reqResult.success) {
+            localStorage.setItem(STORAGE_KEYS.REQUESTS, JSON.stringify(reqResult.data));
+            console.log('[Sync] 신청내역 동기화:', reqResult.data.length, '건');
+        }
+        
+        // 2. 사업마스터 시트 → 메모리 (BUDGET_ITEMS_MASTER 갱신)
+        const itemsResult = await fetchAPI('getBudgetItems', { dept: 'all' });
+        if (itemsResult && itemsResult.success) {
+            // BUDGET_ITEMS_MASTER 동적 업데이트
+            window.BUDGET_ITEMS_MASTER_SYNCED = itemsResult.data;
+            console.log('[Sync] 사업마스터 동기화:', itemsResult.data.length, '개');
+        }
+        
+        // 3. 사용자 시트 → LocalStorage (관리자만)
+        if (currentUser?.role === 'admin') {
+            const usersResult = await fetchAPI('getUsers', {});
+            if (usersResult && usersResult.success) {
+                localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(usersResult.data));
+                console.log('[Sync] 사용자 동기화:', usersResult.data.length, '명');
+            }
+        }
+        
+        if (!silent) hideLoading();
+        return true;
+    } catch (err) {
+        console.error('[Sync] 오류:', err);
+        if (!silent) hideLoading();
+        return false;
+    }
+}
+
+/**
+ * v3.8 옵션 A: 작업 후 시트 → LocalStorage 재동기화
+ * 신청/승인/반려 등 후 호출
+ */
+async function refreshFromSheet() {
+    if (API_CONFIG.OFFLINE_MODE || API_CONFIG.URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
+        return;
+    }
+    
+    try {
+        const reqResult = await fetchAPI('getRequests', {});
+        if (reqResult && reqResult.success) {
+            localStorage.setItem(STORAGE_KEYS.REQUESTS, JSON.stringify(reqResult.data));
+            invalidateCache();
+        }
+    } catch (err) {
+        console.error('[Refresh] 오류:', err);
     }
 }
 
@@ -3236,9 +3322,12 @@ async function handleLogout() {
 // ============================================
 // 메인 앱 표시 (역할별 구성)
 // ============================================
-function showMainApp() {
+async function showMainApp() {
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('mainApp').style.display = 'block';
+    
+    // v3.8: 시트에서 최신 데이터 동기화 (옵션 A 핵심)
+    await syncFromSheet();
 
     document.getElementById('currentUserInfo').textContent = 
         `${getDepartmentName(currentUser.department)} · ${ROLE_NAMES[currentUser.role]}`;
@@ -3370,9 +3459,11 @@ function switchView(viewId) {
     document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
 }
 
-function showDashboard() {
+async function showDashboard() {
     switchView('dashboardView');
     document.querySelector('[data-view="dashboard"]').classList.add('active');
+    // v3.8: 시트에서 최신 데이터 (조용히)
+    await syncFromSheet(true);
     renderDashboard();
 }
 
@@ -3389,7 +3480,7 @@ function showNewRequest() {
     if (businessInfo) businessInfo.innerHTML = '';
 }
 
-function showRequests(resetViewMode = true) {
+async function showRequests(resetViewMode = true) {
     switchView('requestsView');
     document.querySelector('[data-view="requests"]').classList.add('active');
     
@@ -3399,12 +3490,16 @@ function showRequests(resetViewMode = true) {
         currentFilter = 'all';
     }
     
+    // v3.8: 시트에서 최신 데이터 (조용히)
+    await syncFromSheet(true);
     renderRequests();
 }
 
-function showApproval() {
+async function showApproval() {
     switchView('approvalView');
     document.querySelector('[data-view="approval"]').classList.add('active');
+    // v3.8: 시트에서 최신 데이터 (조용히)
+    await syncFromSheet(true);
     renderApproval();
 }
 
@@ -3890,7 +3985,7 @@ function checkBudgetLimit() {
     }
 }
 
-document.getElementById('budgetRequestForm').addEventListener('submit', function(e) {
+document.getElementById('budgetRequestForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     
     const category = document.getElementById('reqCategory').value;
@@ -3919,13 +4014,44 @@ document.getElementById('budgetRequestForm').addEventListener('submit', function
         }
     }
 
+    // v3.8: API 우선 시도
+    showLoading('신청 제출 중...');
+    const apiResult = await fetchAPI('createRequest', {
+        data: {
+            category,
+            amount,
+            purpose,
+            usageDate,
+            businessCode: businessCode || null,
+            businessName: businessName || null
+        }
+    });
+    hideLoading();
+    
+    if (apiResult !== null) {
+        // 온라인 모드
+        if (apiResult.success) {
+            invalidateCache('getRequests');
+            showNotification('예산 신청이 부서장에게 전달되었습니다!', 'success');
+            renderSidebarBudget();
+            showDashboard();
+            return;
+        } else {
+            showNotification(apiResult.error || '신청 실패', 'error');
+            return;
+        }
+    }
+    
+    // 오프라인 폴백 (LocalStorage)
+    console.log('[Request] LocalStorage 폴백 모드');
+    
     const requests = JSON.parse(localStorage.getItem(STORAGE_KEYS.REQUESTS) || '[]');
     const newRequest = {
         id: 'r' + Date.now(),
         department: currentUser.department,
         category, amount, purpose, usageDate,
-        businessCode: businessCode || null,    // v3.8: 사업 코드
-        businessName: businessName || null,    // v3.8: 사업명
+        businessCode: businessCode || null,
+        businessName: businessName || null,
         requestedBy: currentUser.id,
         requestedByName: currentUser.name,
         requestDate: new Date().toISOString(),
@@ -4268,7 +4394,41 @@ function renderApprovalCard(request) {
     `;
 }
 
-function approveRequest(id) {
+async function approveRequest(id) {
+    // v3.8: API 우선 시도
+    showLoading('승인 처리 중...');
+    const apiResult = await fetchAPI('approveRequest', { id });
+    hideLoading();
+    
+    if (apiResult !== null) {
+        // 온라인 모드
+        if (apiResult.success) {
+            // 시트에서 최신 데이터 가져오기
+            await refreshFromSheet();
+            
+            const newStatus = apiResult.newStatus;
+            if (newStatus === 'pending-finance') {
+                showNotification('승인 완료! 재정 부서로 전달되었습니다.', 'success');
+            } else if (newStatus === 'approved') {
+                showNotification('최종 승인되었습니다!', 'success');
+            }
+            
+            renderSidebarBudget();
+            renderApproval();
+            
+            if (viewingRequestId === id) {
+                showDetailModal(id);
+            }
+            return;
+        } else {
+            showNotification(apiResult.error || '승인 실패', 'error');
+            return;
+        }
+    }
+    
+    // 오프라인 폴백
+    console.log('[Approve] LocalStorage 폴백 모드');
+    
     const requests = JSON.parse(localStorage.getItem(STORAGE_KEYS.REQUESTS) || '[]');
     const request = requests.find(r => r.id === id);
     if (!request) return;
@@ -4355,12 +4515,43 @@ function closeRejectModal() {
     document.getElementById('rejectModal').classList.remove('active');
 }
 
-function confirmReject() {
+async function confirmReject() {
     const reason = document.getElementById('rejectReason').value.trim();
     if (!reason) {
         showNotification('반려 사유를 입력하세요.', 'error');
         return;
     }
+
+    // v3.8: API 우선 시도
+    showLoading('반려 처리 중...');
+    const apiResult = await fetchAPI('rejectRequest', { 
+        id: rejectingRequestId, 
+        reason 
+    });
+    hideLoading();
+    
+    if (apiResult !== null) {
+        // 온라인 모드
+        if (apiResult.success) {
+            await refreshFromSheet();
+            showNotification('신청이 반려되었습니다.', 'success');
+            
+            const wasViewing = viewingRequestId === rejectingRequestId;
+            const reqId = rejectingRequestId;
+            closeRejectModal();
+            renderApproval();
+            if (wasViewing) {
+                showDetailModal(reqId);
+            }
+            return;
+        } else {
+            showNotification(apiResult.error || '반려 실패', 'error');
+            return;
+        }
+    }
+    
+    // 오프라인 폴백
+    console.log('[Reject] LocalStorage 폴백 모드');
 
     const requests = JSON.parse(localStorage.getItem(STORAGE_KEYS.REQUESTS) || '[]');
     const request = requests.find(r => r.id === rejectingRequestId);
@@ -4398,8 +4589,34 @@ function confirmReject() {
     }
 }
 
-function cancelBeforeApproval(id) {
+async function cancelBeforeApproval(id) {
     if (!confirm('신청을 취소하시겠습니까?')) return;
+    
+    // v3.8: API 우선 시도
+    showLoading('취소 처리 중...');
+    const apiResult = await fetchAPI('cancelRequest', { id });
+    hideLoading();
+    
+    if (apiResult !== null) {
+        if (apiResult.success) {
+            await refreshFromSheet();
+            showNotification('신청이 취소되었습니다.', 'success');
+            renderRequests();
+            renderSidebarBudget();
+            
+            if (viewingRequestId === id) {
+                closeDetailModal();
+            }
+            return;
+        } else {
+            showNotification(apiResult.error || '취소 실패', 'error');
+            return;
+        }
+    }
+    
+    // 오프라인 폴백
+    console.log('[Cancel] LocalStorage 폴백 모드');
+    
     const requests = JSON.parse(localStorage.getItem(STORAGE_KEYS.REQUESTS) || '[]');
     const request = requests.find(r => r.id === id);
     if (request) {
@@ -5388,7 +5605,7 @@ function checkEditBudgetLimit() {
     }
 }
 
-function saveEditRequest() {
+async function saveEditRequest() {
     const amount = parseInt(document.getElementById('editAmount').value);
     const purpose = document.getElementById('editPurpose').value.trim();
     const usageDate = document.getElementById('editUsageDate').value;
@@ -5412,6 +5629,36 @@ function saveEditRequest() {
             return;
         }
     }
+    
+    // v3.8: API 우선 시도
+    showLoading('수정 저장 중...');
+    const apiResult = await fetchAPI('updateRequest', {
+        id: editingRequestId,
+        data: { amount, purpose, usageDate }
+    });
+    hideLoading();
+    
+    if (apiResult !== null) {
+        if (apiResult.success) {
+            await refreshFromSheet();
+            showNotification('신청이 수정되었습니다.', 'success');
+            
+            const reqId = editingRequestId;
+            closeEditModal();
+            renderRequests();
+            renderSidebarBudget();
+            if (viewingRequestId === reqId) {
+                showDetailModal(reqId);
+            }
+            return;
+        } else {
+            showNotification(apiResult.error || '수정 실패', 'error');
+            return;
+        }
+    }
+    
+    // 오프라인 폴백
+    console.log('[Edit] LocalStorage 폴백 모드');
     
     // 변경사항 감지
     const changes = {};
