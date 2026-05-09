@@ -2286,7 +2286,7 @@ const API_CONFIG = {
     URL: 'https://script.google.com/macros/s/AKfycbzGW-KFGPSlJX4sdD5PqbVcJcO5iDv_6mbdYNYfKRusYy_ICqSoqxiV-WuNo6KtLO6j/exec',
     
     // 오프라인 모드 (URL 미설정 시 자동 LocalStorage 사용)
-    OFFLINE_MODE: false,  // URL 설정됨
+    OFFLINE_MODE: false,  // URL 설정 후 false로 변경
     
     // 캐시 TTL (밀리초)
     CACHE_TTL: 5 * 60 * 1000  // 5분
@@ -2586,23 +2586,27 @@ function initApp() {
         initSampleData();
     }
 
-    // 회원가입 부서 옵션 초기화
+    // v3.8 fix: 회원가입 부서 옵션 초기화 (v3.6에서 제거됐으므로 null 체크)
     const deptSelect = document.getElementById('registerDepartment');
-    DEPARTMENTS.forEach(d => {
-        const opt = document.createElement('option');
-        opt.value = d.id;
-        opt.textContent = d.name;
-        deptSelect.appendChild(opt);
-    });
+    if (deptSelect) {
+        DEPARTMENTS.forEach(d => {
+            const opt = document.createElement('option');
+            opt.value = d.id;
+            opt.textContent = d.name;
+            deptSelect.appendChild(opt);
+        });
+    }
 
     // 예산 신청 항목 옵션 초기화
     const catSelect = document.getElementById('reqCategory');
-    CATEGORIES.forEach(c => {
-        const opt = document.createElement('option');
-        opt.value = c.id;
-        opt.textContent = c.name;
-        catSelect.appendChild(opt);
-    });
+    if (catSelect) {
+        CATEGORIES.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c.id;
+            opt.textContent = c.name;
+            catSelect.appendChild(opt);
+        });
+    }
 
     // 로그인 상태 복원
     const savedUser = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
